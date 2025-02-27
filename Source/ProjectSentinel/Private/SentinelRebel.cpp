@@ -16,6 +16,13 @@ void ASentinelRebel::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	constexpr bool canTrust{ true };
+	UE_LOG(LogTemp, Warning, TEXT("BeginPlay() has called, What I just said is: %d"), canTrust);
+
+	FString fstring{ TEXT("'This is the FString after UE_LOG'") };
+	UE_LOG(LogTemp, Display, TEXT("%s"), *fstring);
+
+	UE_LOG(LogTemp, Warning, TEXT("Name of instance: %s"), *GetName());
 }
 
 // Called every frame
