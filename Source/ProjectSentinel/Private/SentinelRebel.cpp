@@ -2,6 +2,7 @@
 
 
 #include "SentinelRebel.h"
+#include "GameFramework/SpringArmComponent.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -9,20 +10,18 @@ ASentinelRebel::ASentinelRebel()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Create a camera boom (pulls in towards the character if there is a collision)
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(RootComponent);
+	CameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character
+	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 }
 
 // Called when the game starts or when spawned
 void ASentinelRebel::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	constexpr bool canTrust{ true };
-	UE_LOG(LogTemp, Warning, TEXT("BeginPlay() has called, What I just said is: %d"), canTrust);
 
-	FString fstring{ TEXT("'This is the FString after UE_LOG'") };
-	UE_LOG(LogTemp, Display, TEXT("%s"), *fstring);
-
-	UE_LOG(LogTemp, Warning, TEXT("Name of instance: %s"), *GetName());
 }
 
 // Called every frame
