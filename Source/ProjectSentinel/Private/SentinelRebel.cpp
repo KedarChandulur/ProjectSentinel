@@ -29,6 +29,34 @@ void ASentinelRebel::BeginPlay()
 
 }
 
+void ASentinelRebel::MoveForward(float value)
+{
+	if ((Controller != nullptr) && value != 0.0f)
+	{
+		const FRotator controllerRotation{ Controller->GetControlRotation() };
+		//const FRotator yawRotation{ 0, controllerRotation.Yaw, 0 };
+		const FRotator yawRotation{ 0.0f, controllerRotation.Yaw, 0.0f };
+
+		const FVector directionX{ FRotationMatrix{yawRotation}.GetUnitAxis(EAxis::X) };
+
+		AddMovementInput(directionX, value);
+	}
+}
+
+void ASentinelRebel::MoveRight(float value)
+{
+	if ((Controller != nullptr) && value != 0.0f)
+	{
+		const FRotator controllerRotation{ Controller->GetControlRotation() };
+		//const FRotator yawRotation{ 0, controllerRotation.Yaw, 0 };
+		const FRotator yawRotation{ 0.0f, controllerRotation.Yaw, 0.0f };
+
+		const FVector directionY{ FRotationMatrix{yawRotation}.GetUnitAxis(EAxis::Y) };
+
+		AddMovementInput(directionY, value);
+	}
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
@@ -40,6 +68,8 @@ void ASentinelRebel::Tick(float DeltaTime)
 void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	check(PlayerInputComponent);
 
+	PlayerInputComponent->BindAxis("MoveForward", this, &ASentinelRebel::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ASentinelRebel::MoveRight);
 }
-
