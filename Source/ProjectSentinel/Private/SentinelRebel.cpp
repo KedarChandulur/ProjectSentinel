@@ -7,19 +7,20 @@
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
+	: _mBaseTurnRate(45.0f), _mBaseLookUpRate(45.0f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Create a camera boom (pulls in towards the character if there is a collision)
-	_mcameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	_mcameraBoom->SetupAttachment(RootComponent);
-	_mcameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character
-	_mcameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+	_mCameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	_mCameraBoom->SetupAttachment(RootComponent);
+	_mCameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character
+	_mCameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
-	_mfollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	_mfollowCamera->SetupAttachment(_mcameraBoom, USpringArmComponent::SocketName); // Attach camera to the end of boom
-	_mfollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+	_mFollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	_mFollowCamera->SetupAttachment(_mCameraBoom, USpringArmComponent::SocketName); // Attach camera to the end of boom
+	_mFollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 }
 
 // Called when the game starts or when spawned
@@ -57,6 +58,18 @@ void ASentinelRebel::MoveRight(float value)
 	}
 }
 
+void ASentinelRebel::TurnAtRate(float rate)
+{
+	// Calculate delta for this frame from the rate information
+	AddControllerYawInput(rate * _mBaseTurnRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame
+}
+
+void ASentinelRebel::LookUpAtRate(float rate)
+{
+	// Calculate delta for this frame from the rate information
+	AddControllerPitchInput(rate * _mBaseLookUpRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
@@ -72,4 +85,12 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASentinelRebel::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ASentinelRebel::MoveRight);
+	PlayerInputComponent->BindAxis("TurnRate", this, &ASentinelRebel::TurnAtRate);
+	PlayerInputComponent->BindAxis("LookUpRate", this, &ASentinelRebel::LookUpAtRate);
+
+	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 }
