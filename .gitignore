@@ -84,3 +84,5 @@ enc_temp_folder/*
 # C++ Debugging Symbols
 *.pdb
 *.idb
+
+Content/ParagonLtBelica/*
