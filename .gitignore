@@ -85,4 +85,5 @@ enc_temp_folder/*
 *.pdb
 *.idb
 
+# Ignore Asset folders
 Content/ParagonLtBelica/*
