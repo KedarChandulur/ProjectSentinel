@@ -33,5 +33,5 @@ private:
 
 	/** Wheater or not the character is moving */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-	float isAccelerating;
+	bool isAccelerating;
 };
