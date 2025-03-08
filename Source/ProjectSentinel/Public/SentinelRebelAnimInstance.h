@@ -29,7 +29,7 @@ private:
 
 	/** Whether or not the character is in the air */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-	float isInAir;
+	bool isInAir;
 
 	/** Wheater or not the character is moving */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
