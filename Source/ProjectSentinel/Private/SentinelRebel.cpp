@@ -4,6 +4,7 @@
 #include "SentinelRebel.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -21,6 +22,17 @@ ASentinelRebel::ASentinelRebel()
 	_mFollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	_mFollowCamera->SetupAttachment(_mCameraBoom, USpringArmComponent::SocketName); // Attach camera to the end of boom
 	_mFollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	// Don't rotate when the controller rotates. Let the controller only affect the camera.
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = false;
+	bUseControllerRotationRoll = false;
+
+	// Configure character movement
+	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ... at this rotation rate
+	GetCharacterMovement()->JumpZVelocity = 600.0f;
+	GetCharacterMovement()->AirControl = 0.2f;
 }
 
 // Called when the game starts or when spawned
