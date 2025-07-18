@@ -82,6 +82,11 @@ void ASentinelRebel::LookUpAtRate(float rate)
 	AddControllerPitchInput(rate * _mBaseLookUpRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame
 }
 
+void ASentinelRebel::FireWeapon()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Fire Weapon."));
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
@@ -105,4 +110,5 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &ASentinelRebel::FireWeapon);
 }
