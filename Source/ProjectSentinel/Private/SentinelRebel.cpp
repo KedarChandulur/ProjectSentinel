@@ -23,6 +23,7 @@ ASentinelRebel::ASentinelRebel()
 	_mCameraBoom->SetupAttachment(RootComponent);
 	_mCameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character
 	_mCameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+	_mCameraBoom->SocketOffset = FVector(0.0f, 50.0f, 50.0f);
 
 	_mFollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	_mFollowCamera->SetupAttachment(_mCameraBoom, USpringArmComponent::SocketName); // Attach camera to the end of boom
@@ -30,11 +31,11 @@ ASentinelRebel::ASentinelRebel()
 
 	// Don't rotate when the controller rotates. Let the controller only affect the camera.
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...
+	GetCharacterMovement()->bOrientRotationToMovement = false; // Character moves in the direction of input...
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ... at this rotation rate
 	GetCharacterMovement()->JumpZVelocity = 600.0f;
 	GetCharacterMovement()->AirControl = 0.2f;
