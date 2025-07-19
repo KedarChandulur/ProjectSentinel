@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -86,13 +87,33 @@ void ASentinelRebel::LookUpAtRate(float rate)
 
 void ASentinelRebel::FireWeapon()
 {
-	if (FireSound)
+	if (_mFireSound)
 	{
-		UGameplayStatics::PlaySound2D(this, FireSound);
+		UGameplayStatics::PlaySound2D(this, _mFireSound);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Fire sound is null."));
+	}
+
+	const USkeletalMeshSocket* barrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
+
+	if (barrelSocket)
+	{
+		const FTransform socketTransform = barrelSocket->GetSocketTransform(GetMesh());
+
+		if (_mMuzzleFlash)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mMuzzleFlash, socketTransform);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Muzzle flash is null."));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Barrel socket is null."));
 	}
 }
 

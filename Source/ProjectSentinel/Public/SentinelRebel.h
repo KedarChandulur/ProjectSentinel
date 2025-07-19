@@ -61,8 +61,13 @@ private:
 	/** Base Look up/down rate, in deg/sec. Other scaling may affect final turn rate */
 	float _mBaseLookUpRate;
 
+	/** Randomized gunshot sound cue */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	class USoundCue* FireSound;
+	class USoundCue* _mFireSound;
+
+	/** Flash spawned at BarrelSocket */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	class UParticleSystem* _mMuzzleFlash;
 
 public:
 	/** Returns CameraBoom subobject */
