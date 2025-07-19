@@ -8,7 +8,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Engine/SkeletalMeshSocket.h"
-#include "DrawDebugHelpers.h"
+//#include "DrawDebugHelpers.h"
+#include "Particles/ParticleSystemComponent.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -118,12 +119,16 @@ void ASentinelRebel::FireWeapon()
 		const FVector rotationAxis{ rotation.GetAxisX() };
 		const FVector end{ start + rotationAxis * 50'000.0f };
 
+		FVector beamEndPoint{ end };
+
 		GetWorld()->LineTraceSingleByChannel(fireHit, start, end, ECollisionChannel::ECC_Visibility);
 
 		if (fireHit.bBlockingHit)
 		{
-			DrawDebugLine(GetWorld(), start, end, FColor::Red, false, 2.0f);
-			DrawDebugPoint(GetWorld(), fireHit.Location, 5.0f, FColor::Red, false, 2.0f);
+			//DrawDebugLine(GetWorld(), start, end, FColor::Red, false, 2.0f);
+			//DrawDebugPoint(GetWorld(), fireHit.Location, 5.0f, FColor::Red, false, 2.0f);
+
+			beamEndPoint = fireHit.Location;
 
 			if (_mImpactParticles)
 			{
@@ -133,6 +138,24 @@ void ASentinelRebel::FireWeapon()
 			{
 				UE_LOG(LogTemp, Error, TEXT("Impact particles is null."));
 			}
+		}
+
+		if (_mBeamParticles)
+		{
+			UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mBeamParticles, socketTransform);
+
+			if (beam)
+			{
+				beam->SetVectorParameter(FName("Target"), beamEndPoint);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Beam is invalid."));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Beam particles is null."));
 		}
 	}
 	else
