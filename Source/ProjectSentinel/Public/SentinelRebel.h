@@ -61,6 +61,9 @@ private:
 	/** Base Look up/down rate, in deg/sec. Other scaling may affect final turn rate */
 	float _mBaseLookUpRate;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* FireSound;
+
 public:
 	/** Returns CameraBoom subobject */
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const

@@ -5,6 +5,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -84,7 +86,14 @@ void ASentinelRebel::LookUpAtRate(float rate)
 
 void ASentinelRebel::FireWeapon()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Fire Weapon."));
+	if (FireSound)
+	{
+		UGameplayStatics::PlaySound2D(this, FireSound);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Fire sound is null."));
+	}
 }
 
 // Called every frame
