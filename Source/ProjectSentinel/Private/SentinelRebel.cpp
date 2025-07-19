@@ -115,6 +115,25 @@ void ASentinelRebel::FireWeapon()
 	{
 		UE_LOG(LogTemp, Error, TEXT("Barrel socket is null."));
 	}
+
+	if (_mHipFireMontage)
+	{
+		UAnimInstance* animInstance = GetMesh()->GetAnimInstance();
+
+		if (animInstance)
+		{
+			animInstance->Montage_Play(_mHipFireMontage);
+			animInstance->Montage_JumpToSection(FName("StartFire"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Anim instance is null."));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Hip fire montage is null."));
+	}
 }
 
 // Called every frame
