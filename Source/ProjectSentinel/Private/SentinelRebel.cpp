@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -109,6 +110,20 @@ void ASentinelRebel::FireWeapon()
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("Muzzle flash is null."));
+		}
+
+		FHitResult fireHit;
+		const FVector start{ socketTransform.GetLocation() };
+		const FQuat rotation{ socketTransform.GetRotation() };
+		const FVector rotationAxis{ rotation.GetAxisX() };
+		const FVector end{ start + rotationAxis * 50'000.0f };
+
+		GetWorld()->LineTraceSingleByChannel(fireHit, start, end, ECollisionChannel::ECC_Visibility);
+
+		if (fireHit.bBlockingHit)
+		{
+			DrawDebugLine(GetWorld(), start, end, FColor::Red, false, 2.0f);
+			DrawDebugPoint(GetWorld(), fireHit.Location, 5.0f, FColor::Red, false, 2.0f);
 		}
 	}
 	else
