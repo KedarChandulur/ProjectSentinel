@@ -124,6 +124,15 @@ void ASentinelRebel::FireWeapon()
 		{
 			DrawDebugLine(GetWorld(), start, end, FColor::Red, false, 2.0f);
 			DrawDebugPoint(GetWorld(), fireHit.Location, 5.0f, FColor::Red, false, 2.0f);
+
+			if (_mImpactParticles)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mImpactParticles, fireHit.Location);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Impact particles is null."));
+			}
 		}
 	}
 	else
