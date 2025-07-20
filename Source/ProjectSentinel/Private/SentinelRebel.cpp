@@ -114,7 +114,85 @@ void ASentinelRebel::FireWeapon()
 			UE_LOG(LogTemp, Error, TEXT("Muzzle flash is null."));
 		}
 
-		FHitResult fireHit;
+		// Get current size of the viewport
+		FVector2D viewportSize;
+		if (GEngine && GEngine->GameViewport)
+		{
+			GEngine->GameViewport->GetViewportSize(viewportSize);
+		}
+
+		// Get screen space location of crosshairs
+		FVector2D crosshairLocation(viewportSize.X / 2.0f, viewportSize.Y / 2.0f);
+		crosshairLocation.Y -= 50.0f;
+
+		FVector crosshairWorldPosition;
+		FVector crosshairWorldDirection;
+
+		// Get world position and direction of crosshairs
+		bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld
+							  (
+						       UGameplayStatics::GetPlayerController(this, 0),
+							   crosshairLocation, 
+							   crosshairWorldPosition,
+							   crosshairWorldDirection
+							  );
+
+		if (bScreenToWorld) // was Deprojection successful?
+		{
+			FHitResult screenTraceHit;
+			const FVector start{ crosshairWorldPosition };
+			const FVector end{ crosshairWorldPosition + crosshairWorldDirection * 50'000.0f };
+
+			// Set beam end point to line trace end point
+			FVector beamEndPoint{ end };
+
+			// Trace outward from crosshairs world location
+			GetWorld()->LineTraceSingleByChannel
+			 (
+			  screenTraceHit, 
+			  start, 
+			  end, 
+			  ECollisionChannel::ECC_Visibility
+			 );
+
+			if (screenTraceHit.bBlockingHit) // was there a trace hit?
+			{
+				// Beam end point is now trace hit location
+				beamEndPoint = screenTraceHit.Location;
+
+				if (_mImpactParticles)
+				{
+					UGameplayStatics::SpawnEmitterAtLocation
+					 (
+					  GetWorld(), 
+					  _mImpactParticles, 
+				      screenTraceHit.Location
+					 );
+				}
+			}
+
+			if (_mBeamParticles)
+			{
+				UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation
+				 (
+				  GetWorld(), 
+				  _mBeamParticles, 
+				  socketTransform
+				 );
+
+				if (beam)
+				{
+					beam->SetVectorParameter(FName("Target"), beamEndPoint);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("Beam is invalid."));
+				}
+			}
+		}
+
+		/** Using Line trace below for getting the hit pos */
+		/*FHitResult fireHit;
 		const FVector start{ socketTransform.GetLocation() };
 		const FQuat rotation{ socketTransform.GetRotation() };
 		const FVector rotationAxis{ rotation.GetAxisX() };
@@ -157,7 +235,7 @@ void ASentinelRebel::FireWeapon()
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("Beam particles is null."));
-		}
+		}*/
 	}
 	else
 	{
