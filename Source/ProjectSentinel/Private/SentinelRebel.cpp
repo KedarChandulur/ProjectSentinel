@@ -5,6 +5,11 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
+#include "Engine/SkeletalMeshSocket.h"
+//#include "DrawDebugHelpers.h"
+#include "Particles/ParticleSystemComponent.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -18,6 +23,7 @@ ASentinelRebel::ASentinelRebel()
 	_mCameraBoom->SetupAttachment(RootComponent);
 	_mCameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character
 	_mCameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+	_mCameraBoom->SocketOffset = FVector(0.0f, 50.0f, 50.0f);
 
 	_mFollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	_mFollowCamera->SetupAttachment(_mCameraBoom, USpringArmComponent::SocketName); // Attach camera to the end of boom
@@ -25,11 +31,11 @@ ASentinelRebel::ASentinelRebel()
 
 	// Don't rotate when the controller rotates. Let the controller only affect the camera.
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...
+	GetCharacterMovement()->bOrientRotationToMovement = false; // Character moves in the direction of input...
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ... at this rotation rate
 	GetCharacterMovement()->JumpZVelocity = 600.0f;
 	GetCharacterMovement()->AirControl = 0.2f;
@@ -82,6 +88,180 @@ void ASentinelRebel::LookUpAtRate(float rate)
 	AddControllerPitchInput(rate * _mBaseLookUpRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame
 }
 
+void ASentinelRebel::FireWeapon()
+{
+	if (_mFireSound)
+	{
+		UGameplayStatics::PlaySound2D(this, _mFireSound);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Fire sound is null."));
+	}
+
+	const USkeletalMeshSocket* barrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
+
+	if (barrelSocket)
+	{
+		const FTransform socketTransform = barrelSocket->GetSocketTransform(GetMesh());
+
+		if (_mMuzzleFlash)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mMuzzleFlash, socketTransform);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Muzzle flash is null."));
+		}
+
+		// Get current size of the viewport
+		FVector2D viewportSize;
+		if (GEngine && GEngine->GameViewport)
+		{
+			GEngine->GameViewport->GetViewportSize(viewportSize);
+		}
+
+		// Get screen space location of crosshairs
+		FVector2D crosshairLocation(viewportSize.X / 2.0f, viewportSize.Y / 2.0f);
+		crosshairLocation.Y -= 50.0f;
+
+		FVector crosshairWorldPosition;
+		FVector crosshairWorldDirection;
+
+		// Get world position and direction of crosshairs
+		bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld
+							  (
+						       UGameplayStatics::GetPlayerController(this, 0),
+							   crosshairLocation, 
+							   crosshairWorldPosition,
+							   crosshairWorldDirection
+							  );
+
+		if (bScreenToWorld) // was Deprojection successful?
+		{
+			FHitResult screenTraceHit;
+			const FVector start{ crosshairWorldPosition };
+			const FVector end{ crosshairWorldPosition + crosshairWorldDirection * 50'000.0f };
+
+			// Set beam end point to line trace end point
+			FVector beamEndPoint{ end };
+
+			// Trace outward from crosshairs world location
+			GetWorld()->LineTraceSingleByChannel
+			 (
+			  screenTraceHit, 
+			  start, 
+			  end, 
+			  ECollisionChannel::ECC_Visibility
+			 );
+
+			if (screenTraceHit.bBlockingHit) // was there a trace hit?
+			{
+				// Beam end point is now trace hit location
+				beamEndPoint = screenTraceHit.Location;
+
+				if (_mImpactParticles)
+				{
+					UGameplayStatics::SpawnEmitterAtLocation
+					 (
+					  GetWorld(), 
+					  _mImpactParticles, 
+				      screenTraceHit.Location
+					 );
+				}
+			}
+
+			if (_mBeamParticles)
+			{
+				UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation
+				 (
+				  GetWorld(), 
+				  _mBeamParticles, 
+				  socketTransform
+				 );
+
+				if (beam)
+				{
+					beam->SetVectorParameter(FName("Target"), beamEndPoint);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("Beam is invalid."));
+				}
+			}
+		}
+
+		/** Using Line trace below for getting the hit pos */
+		/*FHitResult fireHit;
+		const FVector start{ socketTransform.GetLocation() };
+		const FQuat rotation{ socketTransform.GetRotation() };
+		const FVector rotationAxis{ rotation.GetAxisX() };
+		const FVector end{ start + rotationAxis * 50'000.0f };
+
+		FVector beamEndPoint{ end };
+
+		GetWorld()->LineTraceSingleByChannel(fireHit, start, end, ECollisionChannel::ECC_Visibility);
+
+		if (fireHit.bBlockingHit)
+		{
+			//DrawDebugLine(GetWorld(), start, end, FColor::Red, false, 2.0f);
+			//DrawDebugPoint(GetWorld(), fireHit.Location, 5.0f, FColor::Red, false, 2.0f);
+
+			beamEndPoint = fireHit.Location;
+
+			if (_mImpactParticles)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mImpactParticles, fireHit.Location);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Impact particles is null."));
+			}
+		}
+
+		if (_mBeamParticles)
+		{
+			UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mBeamParticles, socketTransform);
+
+			if (beam)
+			{
+				beam->SetVectorParameter(FName("Target"), beamEndPoint);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Beam is invalid."));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Beam particles is null."));
+		}*/
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Barrel socket is null."));
+	}
+
+	if (_mHipFireMontage)
+	{
+		UAnimInstance* animInstance = GetMesh()->GetAnimInstance();
+
+		if (animInstance)
+		{
+			animInstance->Montage_Play(_mHipFireMontage);
+			animInstance->Montage_JumpToSection(FName("StartFire"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Anim instance is null."));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Hip fire montage is null."));
+	}
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
@@ -105,4 +285,5 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &ASentinelRebel::FireWeapon);
 }
