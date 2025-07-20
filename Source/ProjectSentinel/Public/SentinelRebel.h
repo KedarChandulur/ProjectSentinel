@@ -38,6 +38,8 @@ protected:
 	/** Called when the Fire Button is pressed */
 	void FireWeapon();
 
+	bool GetBeamEndLocation(const FVector& muzzleSocketLocation, FVector& outBeamLocation);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
