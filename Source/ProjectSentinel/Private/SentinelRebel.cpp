@@ -159,16 +159,35 @@ void ASentinelRebel::FireWeapon()
 			{
 				// Beam end point is now trace hit location
 				beamEndPoint = screenTraceHit.Location;
+			}
 
-				if (_mImpactParticles)
-				{
-					UGameplayStatics::SpawnEmitterAtLocation
-					 (
-					  GetWorld(), 
-					  _mImpactParticles, 
-				      screenTraceHit.Location
-					 );
-				}
+			// Perform a second trace, this time from gun barrel
+			FHitResult weaponTraceHit;
+			const FVector weaponTraceStart{ socketTransform.GetLocation() };
+			const FVector weaponTraceEnd{ beamEndPoint };
+
+			GetWorld()->LineTraceSingleByChannel
+			 (
+				weaponTraceHit,
+				weaponTraceStart,
+				weaponTraceEnd,
+				ECollisionChannel::ECC_Visibility
+			 );
+
+			if (weaponTraceHit.bBlockingHit) // object between barrel and BeamEndPoint?
+			{
+				beamEndPoint = weaponTraceHit.Location;
+			}
+
+			// Spawn impact particles after updating BeamEndPoint
+			if (_mImpactParticles)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation
+				(
+					GetWorld(),
+					_mImpactParticles,
+					beamEndPoint
+				);
 			}
 
 			if (_mBeamParticles)
