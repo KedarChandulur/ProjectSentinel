@@ -122,22 +122,12 @@ void ASentinelRebel::FireWeapon()
 			// Spawn impact particles after updating BeamEndPoint
 			if (_mImpactParticles)
 			{
-				UGameplayStatics::SpawnEmitterAtLocation
-				(
-					GetWorld(),
-					_mImpactParticles,
-					beamEnd
-				);
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mImpactParticles, beamEnd);
 			}
 
 			if (_mBeamParticles)
 			{
-				UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation
-				(
-					GetWorld(),
-					_mBeamParticles,
-					socketTransform
-				);
+				UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mBeamParticles, socketTransform);
 
 				if (beam)
 				{
@@ -210,13 +200,7 @@ bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVe
 		outBeamLocation = end;
 
 		// Trace outward from crosshairs world location
-		GetWorld()->LineTraceSingleByChannel
-		(
-			screenTraceHit,
-			start,
-			end,
-			ECollisionChannel::ECC_Visibility
-		);
+		GetWorld()->LineTraceSingleByChannel(screenTraceHit, start, end, ECollisionChannel::ECC_Visibility);
 
 		if (screenTraceHit.bBlockingHit) // was there a trace hit?
 		{
@@ -229,13 +213,7 @@ bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVe
 		const FVector weaponTraceStart{ muzzleSocketLocation };
 		const FVector weaponTraceEnd{ outBeamLocation };
 
-		GetWorld()->LineTraceSingleByChannel
-		(
-			weaponTraceHit,
-			weaponTraceStart,
-			weaponTraceEnd,
-			ECollisionChannel::ECC_Visibility
-		);
+		GetWorld()->LineTraceSingleByChannel(weaponTraceHit, weaponTraceStart, weaponTraceEnd, ECollisionChannel::ECC_Visibility);
 
 		if (weaponTraceHit.bBlockingHit) // object between barrel and BeamEndPoint?
 		{
