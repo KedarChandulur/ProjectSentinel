@@ -4,6 +4,7 @@
 #include "SentinelRebelAnimInstance.h"
 #include "SentinelRebel.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 void USentinelRebelAnimInstance::UpdateAnimationProperties(float deltaTime)
 {
@@ -27,6 +28,21 @@ void USentinelRebelAnimInstance::UpdateAnimationProperties(float deltaTime)
 		else
 		{
 			isAccelerating = false;
+		}
+
+		FRotator aimRotation = sentinelRebel->GetBaseAimRotation();
+		FRotator movementRotation = UKismetMathLibrary::MakeRotFromX(sentinelRebel->GetVelocity());
+		movementOffsetYaw = UKismetMathLibrary::NormalizedDeltaRotator(movementRotation, aimRotation).Yaw;
+
+		//FString rotationMessage = FString::Printf(TEXT("Base Aim Rotation: %f"), aimRotation.Yaw);
+		//FString movementRotationMessage = FString::Printf(TEXT("Movement Rotation: %f"), movementRotation.Yaw);
+		FString offsetMessage = FString::Printf(TEXT("Movement Offset Yaw: %f"), movementOffsetYaw);
+
+		if (GEngine)
+		{
+			//GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::White, rotationMessage);
+			//GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::White, movementRotationMessage);
+			GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::White, offsetMessage);
 		}
 	}
 }
