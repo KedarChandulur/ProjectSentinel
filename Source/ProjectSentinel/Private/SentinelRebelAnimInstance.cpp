@@ -36,14 +36,14 @@ void USentinelRebelAnimInstance::UpdateAnimationProperties(float deltaTime)
 
 		//FString rotationMessage = FString::Printf(TEXT("Base Aim Rotation: %f"), aimRotation.Yaw);
 		//FString movementRotationMessage = FString::Printf(TEXT("Movement Rotation: %f"), movementRotation.Yaw);
-		FString offsetMessage = FString::Printf(TEXT("Movement Offset Yaw: %f"), movementOffsetYaw);
+		//FString offsetMessage = FString::Printf(TEXT("Movement Offset Yaw: %f"), movementOffsetYaw);
 
-		if (GEngine)
-		{
-			//GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::White, rotationMessage);
-			//GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::White, movementRotationMessage);
-			GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::White, offsetMessage);
-		}
+		//if (GEngine)
+		//{
+		//	//GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::White, rotationMessage);
+		//	//GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::White, movementRotationMessage);
+		//	GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::White, offsetMessage);
+		//}
 	}
 }
 
