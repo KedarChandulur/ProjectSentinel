@@ -17,7 +17,9 @@ ASentinelRebel::ASentinelRebel()
 	  _mBaseLookUpRate(45.0f), 
 	  _mbAiming(false), 
 	  _mCameraDefaultFOV(0.0f), // setting this in BeginPlay
-	  _mCameraZoomedFOV(60.0f)
+	  _mCameraZoomedFOV(35.0f),
+	  _mCameraCurrentFOV(0.0f),
+	  _mZoomInterpSpeed(20.0f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -25,9 +27,9 @@ ASentinelRebel::ASentinelRebel()
 	// Create a camera boom (pulls in towards the character if there is a collision)
 	_mCameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	_mCameraBoom->SetupAttachment(RootComponent);
-	_mCameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character
+	_mCameraBoom->TargetArmLength = 180.0f; // The camera follows at this distance behind the character
 	_mCameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
-	_mCameraBoom->SocketOffset = FVector(0.0f, 50.0f, 50.0f);
+	_mCameraBoom->SocketOffset = FVector(0.0f, 50.0f, 70.0f);
 
 	_mFollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	_mFollowCamera->SetupAttachment(_mCameraBoom, USpringArmComponent::SocketName); // Attach camera to the end of boom
@@ -53,6 +55,7 @@ void ASentinelRebel::BeginPlay()
 	if (_mFollowCamera)
 	{
 		_mCameraDefaultFOV = GetFollowCamera()->FieldOfView;
+		_mCameraCurrentFOV = _mCameraDefaultFOV;
 	}
 }
 
@@ -237,13 +240,11 @@ bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVe
 void ASentinelRebel::AimingButtonPressed()
 {
 	_mbAiming = true;
-	GetFollowCamera()->SetFieldOfView(_mCameraZoomedFOV);
 }
 
 void ASentinelRebel::AimingButtonReleased()
 {
 	_mbAiming = false;
-	GetFollowCamera()->SetFieldOfView(_mCameraDefaultFOV);
 }
 
 // Called every frame
@@ -251,6 +252,19 @@ void ASentinelRebel::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Set current camera field of view
+	if (_mbAiming)
+	{
+		// Interpolate to zoomed FOV
+		_mCameraCurrentFOV = FMath::FInterpTo(_mCameraCurrentFOV, _mCameraZoomedFOV, DeltaTime, _mZoomInterpSpeed);
+	}
+	else
+	{
+		// Interpolate to default FOV
+		_mCameraCurrentFOV = FMath::FInterpTo(_mCameraCurrentFOV, _mCameraDefaultFOV, DeltaTime, _mZoomInterpSpeed);
+	}
+
+	GetFollowCamera()->SetFieldOfView(_mCameraCurrentFOV);
 }
 
 // Called to bind functionality to input
