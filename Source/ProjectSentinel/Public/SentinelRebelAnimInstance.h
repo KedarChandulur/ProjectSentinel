@@ -34,4 +34,12 @@ private:
 	/** Wheater or not the character is moving */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	bool isAccelerating;
+
+	/** Offset yaw used for strafing */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float movementOffsetYaw;
+
+	/** Offset yaw the frame before we stopped moving */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float lastMovementOffsetYaw;
 };
