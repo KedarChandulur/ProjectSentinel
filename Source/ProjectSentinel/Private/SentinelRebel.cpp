@@ -13,7 +13,11 @@
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
-	: _mBaseTurnRate(45.0f), _mBaseLookUpRate(45.0f)
+	: _mBaseTurnRate(45.0f), 
+	  _mBaseLookUpRate(45.0f), 
+	  _mbAiming(false), 
+	  _mCameraDefaultFOV(0.0f), // setting this in BeginPlay
+	  _mCameraZoomedFOV(60.0f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -46,6 +50,10 @@ void ASentinelRebel::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (_mFollowCamera)
+	{
+		_mCameraDefaultFOV = GetFollowCamera()->FieldOfView;
+	}
 }
 
 void ASentinelRebel::MoveForward(float value)
@@ -226,6 +234,18 @@ bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVe
 	return false;
 }
 
+void ASentinelRebel::AimingButtonPressed()
+{
+	_mbAiming = true;
+	GetFollowCamera()->SetFieldOfView(_mCameraZoomedFOV);
+}
+
+void ASentinelRebel::AimingButtonReleased()
+{
+	_mbAiming = false;
+	GetFollowCamera()->SetFieldOfView(_mCameraDefaultFOV);
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
@@ -239,6 +259,8 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	check(PlayerInputComponent);
 
+	// Binding Axis(s)
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASentinelRebel::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ASentinelRebel::MoveRight);
 	PlayerInputComponent->BindAxis("TurnRate", this, &ASentinelRebel::TurnAtRate);
@@ -247,7 +269,13 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 
+	// Binding Action(s)
+
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+
 	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &ASentinelRebel::FireWeapon);
+
+	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &ASentinelRebel::AimingButtonPressed);
+	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &ASentinelRebel::AimingButtonReleased);
 }
