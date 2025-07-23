@@ -38,6 +38,8 @@ void USentinelRebelAnimInstance::UpdateAnimationProperties(float deltaTime)
 		{
 			lastMovementOffsetYaw = movementOffsetYaw;
 		}
+
+		bAiming = sentinelRebel->GetAiming();
 	}
 }
 

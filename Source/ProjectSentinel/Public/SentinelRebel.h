@@ -120,4 +120,9 @@ public:
 	{
 		return _mFollowCamera;
 	}
+
+	FORCEINLINE bool GetAiming() const
+	{
+		return _mbAiming;
+	}
 };
