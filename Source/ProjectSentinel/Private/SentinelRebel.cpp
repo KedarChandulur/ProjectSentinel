@@ -13,9 +13,22 @@
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
-	: _mBaseTurnRate(45.0f), 
-	  _mBaseLookUpRate(45.0f), 
+	: // Base rates for turning/looking up
+	  _mBaseTurnRate(45.0f), 
+	  _mBaseLookUpRate(45.0f),
+	  // Turn rates for aiming/not aiming
+	  _mHipTurnRate(90.0f),
+	  _mHipLookUpRate(90.0f),
+	  _mAimingTurnRate(20.0f),
+	  _mAimingLookUpRate(20.0f),
+	  // Mouse look sensitivity scale factors
+	  _mMouseHipTurnRate(1.0f),
+	  _mMouseHipLookUpRate(1.0f),
+	  _mMouseAimingTurnRate(0.2f),
+	  _mMouseAimingLookUpRate(0.2f),
+	  // true when aiming the weapon
 	  _mbAiming(false), 
+	  // Camera field of view values
 	  _mCameraDefaultFOV(0.0f), // setting this in BeginPlay
 	  _mCameraZoomedFOV(35.0f),
 	  _mCameraCurrentFOV(0.0f),
@@ -97,6 +110,38 @@ void ASentinelRebel::LookUpAtRate(float rate)
 {
 	// Calculate delta for this frame from the rate information
 	AddControllerPitchInput(rate * _mBaseLookUpRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame
+}
+
+void ASentinelRebel::Turn(float value)
+{
+	float turnScaleFactor{};
+
+	if (_mbAiming)
+	{
+		turnScaleFactor = _mMouseAimingTurnRate;
+	}
+	else
+	{
+		turnScaleFactor = _mMouseHipTurnRate;
+	}
+
+	AddControllerYawInput(value * turnScaleFactor);
+}
+
+void ASentinelRebel::LookUp(float value)
+{
+	float lookUpScaleFactor{};
+
+	if (_mbAiming)
+	{
+		lookUpScaleFactor = _mMouseAimingLookUpRate;
+	}
+	else
+	{
+		lookUpScaleFactor = _mMouseHipLookUpRate;
+	}
+
+	AddControllerPitchInput(value * lookUpScaleFactor);
 }
 
 void ASentinelRebel::FireWeapon()
@@ -264,6 +309,20 @@ void ASentinelRebel::CameraInterpZoom(float deltaTime)
 	GetFollowCamera()->SetFieldOfView(_mCameraCurrentFOV);
 }
 
+void ASentinelRebel::SetLookRates()
+{
+	if (_mbAiming)
+	{
+		_mBaseTurnRate = _mAimingTurnRate;
+		_mBaseLookUpRate = _mAimingLookUpRate;
+	}
+	else
+	{
+		_mBaseTurnRate = _mHipTurnRate;
+		_mBaseLookUpRate = _mHipLookUpRate;
+	}
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
@@ -271,6 +330,9 @@ void ASentinelRebel::Tick(float DeltaTime)
 
 	// Handle interpolation for zoom when aiming
 	CameraInterpZoom(DeltaTime);
+
+	//Change look sensitivity based on aiming
+	SetLookRates();
 }
 
 // Called to bind functionality to input
@@ -286,8 +348,8 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("TurnRate", this, &ASentinelRebel::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &ASentinelRebel::LookUpAtRate);
 
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("Turn", this, &ASentinelRebel::Turn);
+	PlayerInputComponent->BindAxis("LookUp", this, &ASentinelRebel::LookUp);
 
 	// Binding Action(s)
 
