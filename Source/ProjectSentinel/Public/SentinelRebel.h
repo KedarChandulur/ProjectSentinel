@@ -46,6 +46,8 @@ protected:
 	/** Set bAiming to false on button release */
 	void AimingButtonReleased();
 
+	void CameraInterpZoom(float deltaTime);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

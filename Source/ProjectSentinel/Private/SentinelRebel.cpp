@@ -247,24 +247,29 @@ void ASentinelRebel::AimingButtonReleased()
 	_mbAiming = false;
 }
 
+void ASentinelRebel::CameraInterpZoom(float deltaTime)
+{
+	// Set current camera field of view
+	if (_mbAiming)
+	{
+		// Interpolate to zoomed FOV
+		_mCameraCurrentFOV = FMath::FInterpTo(_mCameraCurrentFOV, _mCameraZoomedFOV, deltaTime, _mZoomInterpSpeed);
+	}
+	else
+	{
+		// Interpolate to default FOV
+		_mCameraCurrentFOV = FMath::FInterpTo(_mCameraCurrentFOV, _mCameraDefaultFOV, deltaTime, _mZoomInterpSpeed);
+	}
+
+	GetFollowCamera()->SetFieldOfView(_mCameraCurrentFOV);
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Set current camera field of view
-	if (_mbAiming)
-	{
-		// Interpolate to zoomed FOV
-		_mCameraCurrentFOV = FMath::FInterpTo(_mCameraCurrentFOV, _mCameraZoomedFOV, DeltaTime, _mZoomInterpSpeed);
-	}
-	else
-	{
-		// Interpolate to default FOV
-		_mCameraCurrentFOV = FMath::FInterpTo(_mCameraCurrentFOV, _mCameraDefaultFOV, DeltaTime, _mZoomInterpSpeed);
-	}
-
-	GetFollowCamera()->SetFieldOfView(_mCameraCurrentFOV);
+	CameraInterpZoom(DeltaTime);
 }
 
 // Called to bind functionality to input
