@@ -269,6 +269,7 @@ void ASentinelRebel::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Handle interpolation for zoom when aiming
 	CameraInterpZoom(DeltaTime);
 }
 
