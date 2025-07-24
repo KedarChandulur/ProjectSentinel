@@ -38,7 +38,10 @@ ASentinelRebel::ASentinelRebel()
 	  _mCrosshairVelocityFactor(0.0f),
 	  _mCrosshairInAirFactor(0.0f),
 	  _mCrosshairAimFactor(0.0f),
-	  _mCrosshairShootingFactor(0.0f)
+	  _mCrosshairShootingFactor(0.0f),
+	  // Bullet fire timer variables
+	  _mShootTimeDuration(0.05f),
+	  _mbFiringBullet(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -225,6 +228,9 @@ void ASentinelRebel::FireWeapon()
 	{
 		UE_LOG(LogTemp, Error, TEXT("Hip fire montage is null."));
 	}
+
+	// Start bullet fire timer for crosshairs
+	StartCrosshairBulletFire();
 }
 
 bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVector& outBeamLocation)
@@ -364,7 +370,29 @@ void ASentinelRebel::CalculateCrosshairSpread(float deltaTime)
 		_mCrosshairAimFactor = FMath::FInterpTo(_mCrosshairAimFactor, 0.0f, deltaTime, 30.0f);
 	}
 
-	_mCrosshairSpreadMultiplier = 0.5f + _mCrosshairVelocityFactor + _mCrosshairInAirFactor - _mCrosshairAimFactor;
+	// True 0.05 seconds after firing
+	if (_mbFiringBullet)
+	{
+		_mCrosshairShootingFactor = FMath::FInterpTo(_mCrosshairShootingFactor, 0.3f, deltaTime, 60.0f);
+	}
+	else
+	{
+		_mCrosshairShootingFactor = FMath::FInterpTo(_mCrosshairShootingFactor, 0.0f, deltaTime, 60.0f);
+	}
+
+	_mCrosshairSpreadMultiplier = 0.5f + _mCrosshairVelocityFactor + _mCrosshairInAirFactor - _mCrosshairAimFactor + _mCrosshairShootingFactor;
+}
+
+void ASentinelRebel::StartCrosshairBulletFire()
+{
+	_mbFiringBullet = true;
+
+	GetWorldTimerManager().SetTimer(_mCrosshairShootTimer,this, &ASentinelRebel::FinishCrosshairBulletFire, _mShootTimeDuration);
+}
+
+void ASentinelRebel::FinishCrosshairBulletFire()
+{
+	_mbFiringBullet = false;
 }
 
 // Called every frame
