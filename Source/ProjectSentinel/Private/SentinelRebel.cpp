@@ -331,9 +331,22 @@ void ASentinelRebel::CalculateCrosshairSpread(float deltaTime)
 	FVector velocity{ GetVelocity() };
 	velocity.Z = 0.0f;
 
+	// Calculate crosshair velocity factor
 	_mCrosshairVelocityFactor = FMath::GetMappedRangeValueClamped(walkSpeedRange, velocityMultiplierRange, velocity.Size());
 
-	_mCrosshairSpreadMultiplier = 0.5f + _mCrosshairVelocityFactor;
+	// Calculate crosshair in air factor
+	if (GetCharacterMovement()->IsFalling()) // is in air?
+	{
+		// Spread the crosshairs slowly while in air
+		_mCrosshairInAirFactor = FMath::FInterpTo(_mCrosshairInAirFactor, 2.25f, deltaTime, 2.25f);
+	}
+	else // Character is on the ground
+	{
+		// Shrink the crosshairs rapidly while on the ground
+		_mCrosshairInAirFactor = FMath::FInterpTo(_mCrosshairInAirFactor, 0.0f, deltaTime, 30.0f);
+	}
+
+	_mCrosshairSpreadMultiplier = 0.5f + _mCrosshairVelocityFactor + _mCrosshairInAirFactor;
 }
 
 // Called every frame
