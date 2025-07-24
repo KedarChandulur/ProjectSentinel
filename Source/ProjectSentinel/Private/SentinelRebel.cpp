@@ -323,6 +323,20 @@ void ASentinelRebel::SetLookRates()
 	}
 }
 
+void ASentinelRebel::CalculateCrosshairSpread(float deltaTime)
+{
+	FVector2D walkSpeedRange{ 0.0f, 600.0f };
+	FVector2D velocityMultiplierRange{ 0.0f, 1.0f };
+
+	FVector velocity{ GetVelocity() };
+	velocity.Z = 0.0f;
+
+	_mCrosshairVelocityFactor = FMath::GetMappedRangeValueClamped(walkSpeedRange, velocityMultiplierRange, velocity.Size());
+
+	_mCrosshairSpreadMultiplier = 0.5f + _mCrosshairVelocityFactor;
+
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {

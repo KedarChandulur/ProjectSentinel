@@ -61,6 +61,8 @@ protected:
 	/** Set BaseTurnRate and BaseLookUp based on aiming */
 	void SetLookRates();
 
+	void CalculateCrosshairSpread(float deltaTime);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -152,6 +154,26 @@ private:
 	/** Interp speed for zooming when aiming */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float _mZoomInterpSpeed;
+
+	/** Determines the spread of the crosshairs */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = "true"))
+	float _mCrosshairSpreadMultiplier;
+
+	/** Velocity component for crosshairs spread */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = "true"))
+	float _mCrosshairVelocityFactor;
+
+	/** In air component for crosshairs spread */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = "true"))
+	float _mCrosshairInAirFactor;
+
+	/** Aim component for crosshairs spread */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = "true"))
+	float _mCrosshairAimFactor;
+
+	/** Shooting component for crosshairs spread */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = "true"))
+	float _mCrosshairShootingFactor;
 
 public:
 	/** Returns CameraBoom subobject */
