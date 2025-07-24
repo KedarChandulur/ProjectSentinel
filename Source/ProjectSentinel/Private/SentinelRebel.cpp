@@ -24,15 +24,21 @@ ASentinelRebel::ASentinelRebel()
 	  // Mouse look sensitivity scale factors
 	  _mMouseHipTurnRate(1.0f),
 	  _mMouseHipLookUpRate(1.0f),
-	  _mMouseAimingTurnRate(0.2f),
-	  _mMouseAimingLookUpRate(0.2f),
+	  _mMouseAimingTurnRate(0.5f),
+	  _mMouseAimingLookUpRate(0.5f),
 	  // true when aiming the weapon
 	  _mbAiming(false), 
 	  // Camera field of view values
 	  _mCameraDefaultFOV(0.0f), // setting this in BeginPlay
 	  _mCameraZoomedFOV(35.0f),
 	  _mCameraCurrentFOV(0.0f),
-	  _mZoomInterpSpeed(20.0f)
+	  _mZoomInterpSpeed(20.0f),
+	  // Crosshair spread factors
+	  _mCrosshairSpreadMultiplier(0.0f),
+	  _mCrosshairVelocityFactor(0.0f),
+	  _mCrosshairInAirFactor(0.0f),
+	  _mCrosshairAimFactor(0.0f),
+	  _mCrosshairShootingFactor(0.0f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -346,7 +352,19 @@ void ASentinelRebel::CalculateCrosshairSpread(float deltaTime)
 		_mCrosshairInAirFactor = FMath::FInterpTo(_mCrosshairInAirFactor, 0.0f, deltaTime, 30.0f);
 	}
 
-	_mCrosshairSpreadMultiplier = 0.5f + _mCrosshairVelocityFactor + _mCrosshairInAirFactor;
+	// Calculate crosshair aim factor
+	if (_mbAiming) // are we aiming?
+	{
+		// Shrink crosshairs a small amount very quickly
+		_mCrosshairAimFactor = FMath::FInterpTo(_mCrosshairAimFactor, 0.4f, deltaTime, 30.0f);
+	}
+	else // Not aiming
+	{
+		// Spread crosshairs back to normal very quickly
+		_mCrosshairAimFactor = FMath::FInterpTo(_mCrosshairAimFactor, 0.0f, deltaTime, 30.0f);
+	}
+
+	_mCrosshairSpreadMultiplier = 0.5f + _mCrosshairVelocityFactor + _mCrosshairInAirFactor - _mCrosshairAimFactor;
 }
 
 // Called every frame
