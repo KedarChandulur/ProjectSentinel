@@ -192,4 +192,7 @@ public:
 	{
 		return _mbAiming;
 	}
+
+	UFUNCTION(BlueprintCallable)
+	float GetCrosshairSpreadMultiplier() const;
 };

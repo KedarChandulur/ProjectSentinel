@@ -334,7 +334,6 @@ void ASentinelRebel::CalculateCrosshairSpread(float deltaTime)
 	_mCrosshairVelocityFactor = FMath::GetMappedRangeValueClamped(walkSpeedRange, velocityMultiplierRange, velocity.Size());
 
 	_mCrosshairSpreadMultiplier = 0.5f + _mCrosshairVelocityFactor;
-
 }
 
 // Called every frame
@@ -347,6 +346,9 @@ void ASentinelRebel::Tick(float DeltaTime)
 
 	//Change look sensitivity based on aiming
 	SetLookRates();
+
+	// Calculate crosshair spread multiplier
+	CalculateCrosshairSpread(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -374,4 +376,9 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &ASentinelRebel::AimingButtonPressed);
 	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &ASentinelRebel::AimingButtonReleased);
+}
+
+float ASentinelRebel::GetCrosshairSpreadMultiplier() const
+{
+	return _mCrosshairSpreadMultiplier;
 }
