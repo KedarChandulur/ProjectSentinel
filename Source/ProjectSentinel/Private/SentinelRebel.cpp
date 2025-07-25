@@ -13,11 +13,40 @@
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
-	: _mBaseTurnRate(45.0f), 
-	  _mBaseLookUpRate(45.0f), 
+	: // Base rates for turning/looking up
+	  _mBaseTurnRate(45.0f), 
+	  _mBaseLookUpRate(45.0f),
+	  // Turn rates for aiming/not aiming
+	  _mHipTurnRate(90.0f),
+	  _mHipLookUpRate(90.0f),
+	  _mAimingTurnRate(20.0f),
+	  _mAimingLookUpRate(20.0f),
+	  // Mouse look sensitivity scale factors
+	  _mMouseHipTurnRate(1.0f),
+	  _mMouseHipLookUpRate(1.0f),
+	  _mMouseAimingTurnRate(0.5f),
+	  _mMouseAimingLookUpRate(0.5f),
+	  // true when aiming the weapon
 	  _mbAiming(false), 
+	  // Camera field of view values
 	  _mCameraDefaultFOV(0.0f), // setting this in BeginPlay
-	  _mCameraZoomedFOV(60.0f)
+	  _mCameraZoomedFOV(35.0f),
+	  _mCameraCurrentFOV(0.0f),
+	  _mZoomInterpSpeed(20.0f),
+	  _mCrosshairYOffset(50.0f),
+	  // Crosshair spread factors
+	  _mCrosshairSpreadMultiplier(0.0f),
+	  _mCrosshairVelocityFactor(0.0f),
+	  _mCrosshairInAirFactor(0.0f),
+	  _mCrosshairAimFactor(0.0f),
+	  _mCrosshairShootingFactor(0.0f),
+	  // Bullet fire timer variables
+	  _mShootTimeDuration(0.05f),
+	  _mbFiringBullet(false),
+	  // Automatic fire variables
+	  _mAutomaticFirerate(0.1f),
+	  _mbShouldFire(true),
+	  _mbFireButtonPressed(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -25,9 +54,9 @@ ASentinelRebel::ASentinelRebel()
 	// Create a camera boom (pulls in towards the character if there is a collision)
 	_mCameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	_mCameraBoom->SetupAttachment(RootComponent);
-	_mCameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character
+	_mCameraBoom->TargetArmLength = 180.0f; // The camera follows at this distance behind the character
 	_mCameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
-	_mCameraBoom->SocketOffset = FVector(0.0f, 50.0f, 50.0f);
+	_mCameraBoom->SocketOffset = FVector(0.0f, 50.0f, 70.0f);
 
 	_mFollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	_mFollowCamera->SetupAttachment(_mCameraBoom, USpringArmComponent::SocketName); // Attach camera to the end of boom
@@ -53,6 +82,7 @@ void ASentinelRebel::BeginPlay()
 	if (_mFollowCamera)
 	{
 		_mCameraDefaultFOV = GetFollowCamera()->FieldOfView;
+		_mCameraCurrentFOV = _mCameraDefaultFOV;
 	}
 }
 
@@ -94,6 +124,38 @@ void ASentinelRebel::LookUpAtRate(float rate)
 {
 	// Calculate delta for this frame from the rate information
 	AddControllerPitchInput(rate * _mBaseLookUpRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame
+}
+
+void ASentinelRebel::Turn(float value)
+{
+	float turnScaleFactor{};
+
+	if (_mbAiming)
+	{
+		turnScaleFactor = _mMouseAimingTurnRate;
+	}
+	else
+	{
+		turnScaleFactor = _mMouseHipTurnRate;
+	}
+
+	AddControllerYawInput(value * turnScaleFactor);
+}
+
+void ASentinelRebel::LookUp(float value)
+{
+	float lookUpScaleFactor{};
+
+	if (_mbAiming)
+	{
+		lookUpScaleFactor = _mMouseAimingLookUpRate;
+	}
+	else
+	{
+		lookUpScaleFactor = _mMouseHipLookUpRate;
+	}
+
+	AddControllerPitchInput(value * lookUpScaleFactor);
 }
 
 void ASentinelRebel::FireWeapon()
@@ -171,6 +233,9 @@ void ASentinelRebel::FireWeapon()
 	{
 		UE_LOG(LogTemp, Error, TEXT("Hip fire montage is null."));
 	}
+
+	// Start bullet fire timer for crosshairs
+	StartCrosshairBulletFire();
 }
 
 bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVector& outBeamLocation)
@@ -184,7 +249,7 @@ bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVe
 
 	// Get screen space location of crosshairs
 	FVector2D crosshairLocation(viewportSize.X / 2.0f, viewportSize.Y / 2.0f);
-	crosshairLocation.Y -= 50.0f;
+	crosshairLocation.Y -= _mCrosshairYOffset;
 
 	FVector crosshairWorldPosition;
 	FVector crosshairWorldDirection;
@@ -237,13 +302,133 @@ bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVe
 void ASentinelRebel::AimingButtonPressed()
 {
 	_mbAiming = true;
-	GetFollowCamera()->SetFieldOfView(_mCameraZoomedFOV);
 }
 
 void ASentinelRebel::AimingButtonReleased()
 {
 	_mbAiming = false;
-	GetFollowCamera()->SetFieldOfView(_mCameraDefaultFOV);
+}
+
+void ASentinelRebel::CameraInterpZoom(float deltaTime)
+{
+	// Set current camera field of view
+	if (_mbAiming)
+	{
+		// Interpolate to zoomed FOV
+		_mCameraCurrentFOV = FMath::FInterpTo(_mCameraCurrentFOV, _mCameraZoomedFOV, deltaTime, _mZoomInterpSpeed);
+	}
+	else
+	{
+		// Interpolate to default FOV
+		_mCameraCurrentFOV = FMath::FInterpTo(_mCameraCurrentFOV, _mCameraDefaultFOV, deltaTime, _mZoomInterpSpeed);
+	}
+
+	GetFollowCamera()->SetFieldOfView(_mCameraCurrentFOV);
+}
+
+void ASentinelRebel::SetLookRates()
+{
+	if (_mbAiming)
+	{
+		_mBaseTurnRate = _mAimingTurnRate;
+		_mBaseLookUpRate = _mAimingLookUpRate;
+	}
+	else
+	{
+		_mBaseTurnRate = _mHipTurnRate;
+		_mBaseLookUpRate = _mHipLookUpRate;
+	}
+}
+
+void ASentinelRebel::CalculateCrosshairSpread(float deltaTime)
+{
+	FVector2D walkSpeedRange{ 0.0f, 600.0f };
+	FVector2D velocityMultiplierRange{ 0.0f, 1.0f };
+
+	FVector velocity{ GetVelocity() };
+	velocity.Z = 0.0f;
+
+	// Calculate crosshair velocity factor
+	_mCrosshairVelocityFactor = FMath::GetMappedRangeValueClamped(walkSpeedRange, velocityMultiplierRange, velocity.Size());
+
+	// Calculate crosshair in air factor
+	if (GetCharacterMovement()->IsFalling()) // is in air?
+	{
+		// Spread the crosshairs slowly while in air
+		_mCrosshairInAirFactor = FMath::FInterpTo(_mCrosshairInAirFactor, 2.25f, deltaTime, 2.25f);
+	}
+	else // Character is on the ground
+	{
+		// Shrink the crosshairs rapidly while on the ground
+		_mCrosshairInAirFactor = FMath::FInterpTo(_mCrosshairInAirFactor, 0.0f, deltaTime, 30.0f);
+	}
+
+	// Calculate crosshair aim factor
+	if (_mbAiming) // are we aiming?
+	{
+		// Shrink crosshairs a small amount very quickly
+		_mCrosshairAimFactor = FMath::FInterpTo(_mCrosshairAimFactor, 0.4f, deltaTime, 30.0f);
+	}
+	else // Not aiming
+	{
+		// Spread crosshairs back to normal very quickly
+		_mCrosshairAimFactor = FMath::FInterpTo(_mCrosshairAimFactor, 0.0f, deltaTime, 30.0f);
+	}
+
+	// True 0.05 seconds after firing
+	if (_mbFiringBullet)
+	{
+		_mCrosshairShootingFactor = FMath::FInterpTo(_mCrosshairShootingFactor, 0.3f, deltaTime, 60.0f);
+	}
+	else
+	{
+		_mCrosshairShootingFactor = FMath::FInterpTo(_mCrosshairShootingFactor, 0.0f, deltaTime, 60.0f);
+	}
+
+	_mCrosshairSpreadMultiplier = 0.5f + _mCrosshairVelocityFactor + _mCrosshairInAirFactor - _mCrosshairAimFactor + _mCrosshairShootingFactor;
+}
+
+void ASentinelRebel::StartCrosshairBulletFire()
+{
+	_mbFiringBullet = true;
+
+	GetWorldTimerManager().SetTimer(_mCrosshairShootTimer,this, &ASentinelRebel::FinishCrosshairBulletFire, _mShootTimeDuration);
+}
+
+void ASentinelRebel::FinishCrosshairBulletFire()
+{
+	_mbFiringBullet = false;
+}
+
+void ASentinelRebel::FireButtonPressed()
+{
+	_mbFireButtonPressed = true;
+	StartFireTimer();
+}
+
+void ASentinelRebel::FireButtonReleased()
+{
+	_mbFireButtonPressed = false;
+}
+
+void ASentinelRebel::StartFireTimer()
+{
+	if (_mbShouldFire)
+	{
+		FireWeapon();
+		_mbShouldFire = false;
+		GetWorldTimerManager().SetTimer(_mAutoFireTimer, this, &ASentinelRebel::AutoFireReset, _mAutomaticFirerate);
+	}
+}
+
+void ASentinelRebel::AutoFireReset()
+{
+	_mbShouldFire = true;
+
+	if (_mbFireButtonPressed)
+	{
+		StartFireTimer();
+	}
 }
 
 // Called every frame
@@ -251,6 +436,14 @@ void ASentinelRebel::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Handle interpolation for zoom when aiming
+	CameraInterpZoom(DeltaTime);
+
+	//Change look sensitivity based on aiming
+	SetLookRates();
+
+	// Calculate crosshair spread multiplier
+	CalculateCrosshairSpread(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -266,16 +459,22 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("TurnRate", this, &ASentinelRebel::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &ASentinelRebel::LookUpAtRate);
 
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("Turn", this, &ASentinelRebel::Turn);
+	PlayerInputComponent->BindAxis("LookUp", this, &ASentinelRebel::LookUp);
 
 	// Binding Action(s)
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
-	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &ASentinelRebel::FireWeapon);
+	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &ASentinelRebel::FireButtonPressed);
+	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &ASentinelRebel::FireButtonReleased);
 
 	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &ASentinelRebel::AimingButtonPressed);
 	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &ASentinelRebel::AimingButtonReleased);
+}
+
+float ASentinelRebel::GetCrosshairSpreadMultiplier() const
+{
+	return _mCrosshairSpreadMultiplier;
 }
