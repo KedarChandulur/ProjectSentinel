@@ -65,8 +65,17 @@ protected:
 
 	void StartCrosshairBulletFire();
 
-	UFUNCTION()
+	UFUNCTION() // Since this is a call back function for a timer its needs to be a UFUNCTION
 	void FinishCrosshairBulletFire();
+
+	void FireButtonPressed();
+
+	void FireButtonReleased();
+
+	void StartFireTimer();
+
+	UFUNCTION() // Since this is a call back function for a timer its needs to be a UFUNCTION
+	void AutoFireReset();
 
 public:	
 	// Called every frame
@@ -188,6 +197,18 @@ private:
 	bool _mbFiringBullet;
 
 	FTimerHandle _mCrosshairShootTimer;
+
+	/** Left mouse button or right trigger pressed */
+	bool _mbFireButtonPressed;
+
+	/** True when we can fire. False when waiting for the timer */
+	bool _mbShouldFire;
+
+	/** Rate of automatic gun fire */
+	float _mAutomaticFirerate;
+
+	/** Sets a timer between gunshots */
+	FTimerHandle _mAutoFireTimer;
 
 public:
 	/** Returns CameraBoom subobject */

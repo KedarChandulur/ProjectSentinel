@@ -42,7 +42,11 @@ ASentinelRebel::ASentinelRebel()
 	  _mCrosshairShootingFactor(0.0f),
 	  // Bullet fire timer variables
 	  _mShootTimeDuration(0.05f),
-	  _mbFiringBullet(false)
+	  _mbFiringBullet(false),
+	  // Automatic fire variables
+	  _mAutomaticFirerate(0.1f),
+	  _mbShouldFire(true),
+	  _mbFireButtonPressed(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -396,6 +400,37 @@ void ASentinelRebel::FinishCrosshairBulletFire()
 	_mbFiringBullet = false;
 }
 
+void ASentinelRebel::FireButtonPressed()
+{
+	_mbFireButtonPressed = true;
+	StartFireTimer();
+}
+
+void ASentinelRebel::FireButtonReleased()
+{
+	_mbFireButtonPressed = false;
+}
+
+void ASentinelRebel::StartFireTimer()
+{
+	if (_mbShouldFire)
+	{
+		FireWeapon();
+		_mbShouldFire = false;
+		GetWorldTimerManager().SetTimer(_mAutoFireTimer, this, &ASentinelRebel::AutoFireReset, _mAutomaticFirerate);
+	}
+}
+
+void ASentinelRebel::AutoFireReset()
+{
+	_mbShouldFire = true;
+
+	if (_mbFireButtonPressed)
+	{
+		StartFireTimer();
+	}
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
@@ -432,7 +467,8 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
-	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &ASentinelRebel::FireWeapon);
+	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &ASentinelRebel::FireButtonPressed);
+	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &ASentinelRebel::FireButtonReleased);
 
 	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &ASentinelRebel::AimingButtonPressed);
 	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &ASentinelRebel::AimingButtonReleased);
