@@ -33,6 +33,7 @@ ASentinelRebel::ASentinelRebel()
 	  _mCameraZoomedFOV(35.0f),
 	  _mCameraCurrentFOV(0.0f),
 	  _mZoomInterpSpeed(20.0f),
+	  _mCrosshairYOffset(50.0f),
 	  // Crosshair spread factors
 	  _mCrosshairSpreadMultiplier(0.0f),
 	  _mCrosshairVelocityFactor(0.0f),
@@ -244,7 +245,7 @@ bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVe
 
 	// Get screen space location of crosshairs
 	FVector2D crosshairLocation(viewportSize.X / 2.0f, viewportSize.Y / 2.0f);
-	crosshairLocation.Y -= 50.0f;
+	crosshairLocation.Y -= _mCrosshairYOffset;
 
 	FVector crosshairWorldPosition;
 	FVector crosshairWorldDirection;
