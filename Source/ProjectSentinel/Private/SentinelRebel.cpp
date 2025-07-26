@@ -196,19 +196,19 @@ void ASentinelRebel::FireWeapon()
 			{
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mImpactParticles, beamEnd);
 			}
+		}
 
-			if (_mBeamParticles)
+		if (_mBeamParticles)
+		{
+			UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mBeamParticles, socketTransform);
+
+			if (beam)
 			{
-				UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mBeamParticles, socketTransform);
-
-				if (beam)
-				{
-					beam->SetVectorParameter(FName("Target"), beamEnd);
-				}
-				else
-				{
-					UE_LOG(LogTemp, Error, TEXT("Beam is invalid."));
-				}
+				beam->SetVectorParameter(FName("Target"), beamEnd);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Beam is invalid."));
 			}
 		}
 	}
