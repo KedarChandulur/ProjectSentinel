@@ -37,6 +37,9 @@ private:
 	class UWidgetComponent* _mPickupWidget;
 
 public:
-
+	FORCEINLINE UWidgetComponent* GetPickupWidget() const
+	{
+		return _mPickupWidget;
+	}
 
 };

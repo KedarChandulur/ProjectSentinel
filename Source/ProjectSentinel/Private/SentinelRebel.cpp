@@ -10,6 +10,8 @@
 #include "Engine/SkeletalMeshSocket.h"
 //#include "DrawDebugHelpers.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Item.h"
+#include "Components/WidgetComponent.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -431,6 +433,45 @@ void ASentinelRebel::AutoFireReset()
 	}
 }
 
+bool ASentinelRebel::TraceUnderCrosshairs(FHitResult& outHitResult)
+{
+	// Get Viewport Size
+	FVector2D viewportSize;
+	if (GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(viewportSize);
+	}
+
+	FVector2D crosshairLocation(viewportSize.X / 2.0f, viewportSize.Y / 2.0f);
+	FVector crosshairWorldPosition;
+	FVector crosshairWorldDirection;
+
+	// Get world position and direction of crosshairs
+	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld
+	(
+		UGameplayStatics::GetPlayerController(this, 0),
+		crosshairLocation,
+		crosshairWorldPosition,
+		crosshairWorldDirection
+	);
+
+	if (bScreenToWorld)
+	{
+		// Trace from Crosshair world location outward
+		const FVector start{ crosshairWorldPosition };
+		const FVector end{ start + crosshairWorldDirection * 50'000.0f };
+
+		GetWorld()->LineTraceSingleByChannel(outHitResult, start, end, ECollisionChannel::ECC_Visibility);
+
+		if (outHitResult.bBlockingHit)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
@@ -444,6 +485,19 @@ void ASentinelRebel::Tick(float DeltaTime)
 
 	// Calculate crosshair spread multiplier
 	CalculateCrosshairSpread(DeltaTime);
+
+	FHitResult itemTraceResult;
+	TraceUnderCrosshairs(itemTraceResult);
+	if (itemTraceResult.bBlockingHit)
+	{
+		AItem* hitItem = Cast<AItem>(itemTraceResult.GetActor());
+
+		if (hitItem && hitItem->GetPickupWidget())
+		{
+			// Show Item's Pickup Widget
+			hitItem->GetPickupWidget()->SetVisibility(true);
+		}
+	}
 }
 
 // Called to bind functionality to input
