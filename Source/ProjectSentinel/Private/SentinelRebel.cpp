@@ -242,59 +242,24 @@ void ASentinelRebel::FireWeapon()
 
 bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVector& outBeamLocation)
 {
-	// Get current size of the viewport
-	FVector2D viewportSize;
-	if (GEngine && GEngine->GameViewport)
+	// Check for crosshair trace hit
+	FHitResult crosshairHitResult;
+
+	TraceUnderCrosshairs(crosshairHitResult);
+
+	// Tentative beam location - still need to trace from gun
+	outBeamLocation = crosshairHitResult.Location;
+
+	// Perform a second trace, this time from gun barrel
+	FHitResult weaponTraceHit;
+	const FVector weaponTraceStart{ muzzleSocketLocation };
+	const FVector weaponTraceEnd{ outBeamLocation };
+
+	GetWorld()->LineTraceSingleByChannel(weaponTraceHit, weaponTraceStart, weaponTraceEnd, ECollisionChannel::ECC_Visibility);
+
+	if (weaponTraceHit.bBlockingHit) // object between barrel and BeamEndPoint?
 	{
-		GEngine->GameViewport->GetViewportSize(viewportSize);
-	}
-
-	// Get screen space location of crosshairs
-	FVector2D crosshairLocation(viewportSize.X / 2.0f, viewportSize.Y / 2.0f);
-	crosshairLocation.Y -= _mCrosshairYOffset;
-
-	FVector crosshairWorldPosition;
-	FVector crosshairWorldDirection;
-
-	// Get world position and direction of crosshairs
-	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld
-	(
-		UGameplayStatics::GetPlayerController(this, 0),
-		crosshairLocation,
-		crosshairWorldPosition,
-		crosshairWorldDirection
-	);
-
-	if (bScreenToWorld) // was Deprojection successful?
-	{
-		FHitResult screenTraceHit;
-		const FVector start{ crosshairWorldPosition };
-		const FVector end{ crosshairWorldPosition + crosshairWorldDirection * 50'000.0f };
-
-		// Set beam end point to line trace end point
-		outBeamLocation = end;
-
-		// Trace outward from crosshairs world location
-		GetWorld()->LineTraceSingleByChannel(screenTraceHit, start, end, ECollisionChannel::ECC_Visibility);
-
-		if (screenTraceHit.bBlockingHit) // was there a trace hit?
-		{
-			// Beam end point is now trace hit location
-			outBeamLocation = screenTraceHit.Location;
-		}
-
-		// Perform a second trace, this time from gun barrel
-		FHitResult weaponTraceHit;
-		const FVector weaponTraceStart{ muzzleSocketLocation };
-		const FVector weaponTraceEnd{ outBeamLocation };
-
-		GetWorld()->LineTraceSingleByChannel(weaponTraceHit, weaponTraceStart, weaponTraceEnd, ECollisionChannel::ECC_Visibility);
-
-		if (weaponTraceHit.bBlockingHit) // object between barrel and BeamEndPoint?
-		{
-			outBeamLocation = weaponTraceHit.Location;
-		}
-
+		outBeamLocation = weaponTraceHit.Location;
 		return true;
 	}
 
@@ -456,6 +421,8 @@ bool ASentinelRebel::TraceUnderCrosshairs(FHitResult& outHitResult)
 		crosshairWorldDirection
 	);
 
+	bool traceSuccessful = false;
+
 	if (bScreenToWorld)
 	{
 		// Trace from Crosshair world location outward
@@ -466,11 +433,20 @@ bool ASentinelRebel::TraceUnderCrosshairs(FHitResult& outHitResult)
 
 		if (outHitResult.bBlockingHit)
 		{
-			return true;
+			/** Note: If something blocks the line trace then LineTraceSingleByChannel method
+			*   will fill the outHitResult.Location with the hit point location
+			*/
+			traceSuccessful = true;
+		}
+		else
+		{
+			// Hit unsuccessful so marking the hit location as the farthest point possible.
+			outHitResult.Location = end;
+			traceSuccessful = false;
 		}
 	}
 
-	return false;
+	return traceSuccessful;
 }
 
 // Called every frame
