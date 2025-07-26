@@ -443,6 +443,7 @@ bool ASentinelRebel::TraceUnderCrosshairs(FHitResult& outHitResult)
 	}
 
 	FVector2D crosshairLocation(viewportSize.X / 2.0f, viewportSize.Y / 2.0f);
+	crosshairLocation.Y -= _mCrosshairYOffset;
 	FVector crosshairWorldPosition;
 	FVector crosshairWorldDirection;
 
