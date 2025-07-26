@@ -253,7 +253,8 @@ bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVe
 	// Perform a second trace, this time from gun barrel
 	FHitResult weaponTraceHit;
 	const FVector weaponTraceStart{ muzzleSocketLocation };
-	const FVector weaponTraceEnd{ outBeamLocation };
+	const FVector startToEnd{ outBeamLocation - muzzleSocketLocation };
+	const FVector weaponTraceEnd{ muzzleSocketLocation + startToEnd * 1.25f };
 
 	GetWorld()->LineTraceSingleByChannel(weaponTraceHit, weaponTraceStart, weaponTraceEnd, ECollisionChannel::ECC_Visibility);
 
@@ -465,6 +466,7 @@ void ASentinelRebel::Tick(float DeltaTime)
 
 	FHitResult itemTraceResult;
 	TraceUnderCrosshairs(itemTraceResult);
+
 	if (itemTraceResult.bBlockingHit)
 	{
 		AItem* hitItem = Cast<AItem>(itemTraceResult.GetActor());
