@@ -172,7 +172,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float _mZoomInterpSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Crosshairs, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "50.0", UIMin = "0.0", UIMax = "50.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "50.0", UIMin = "0.0", UIMax = "50.0"))
 	float _mCrosshairYOffset;
 
 	/** Determines the spread of the crosshairs */
