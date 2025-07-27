@@ -468,7 +468,29 @@ void ASentinelRebel::TraceForItems()
 				// Show Item's Pickup Widget
 				hitItem->GetPickupWidget()->SetVisibility(true);
 			}
+
+			// We hit an AItem last frame
+			if (_mTraceHitItemLastFrame)
+			{
+				if (hitItem != _mTraceHitItemLastFrame)
+				{
+					/** We are hitting a different AItem this frame from last frame
+					*   Or AItem is null
+					*/
+					_mTraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+				}
+			}
+
+			// Store a reference to HitItem for next frame
+			_mTraceHitItemLastFrame = hitItem;
 		}
+	}
+	else if (_mTraceHitItemLastFrame)
+	{
+		/** No longer overlapping any items,
+		*   Item last frame should not show widget
+		*/
+		_mTraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
 	}
 }
 
