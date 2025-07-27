@@ -77,6 +77,12 @@ protected:
 	UFUNCTION() // Since this is a call back function for a timer its needs to be a UFUNCTION
 	void AutoFireReset();
 
+	/** Line trace for items under the crosshairs */
+	bool TraceUnderCrosshairs(FHitResult& outHitResult);
+
+	/** Trace for items if OverlappedItemCount > 0 */
+	void TraceForItems();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -169,7 +175,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float _mZoomInterpSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Crosshairs, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "50.0", UIMin = "0.0", UIMax = "50.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "50.0", UIMin = "0.0", UIMax = "50.0"))
 	float _mCrosshairYOffset;
 
 	/** Determines the spread of the crosshairs */
@@ -210,6 +216,16 @@ private:
 	/** Sets a timer between gunshots */
 	FTimerHandle _mAutoFireTimer;
 
+	/** True if we should trace every frame for items */
+	bool _mbShouldTraceForItems;
+
+	/** Number of overlapped AItems */
+	int8 _mOverlappedItemCount;
+
+	/** The AItem we hit last frame */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	class AItem* _mTraceHitItemLastFrame;
+
 public:
 	/** Returns CameraBoom subobject */
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const
@@ -230,4 +246,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	float GetCrosshairSpreadMultiplier() const;
+
+	FORCEINLINE int8 GetOverlappedItemCount() const
+	{
+		return _mOverlappedItemCount;
+	}
+
+	/** Adds/substracts to/from OverlappedItemCount */
+	void IncrementOverlappedItemCount(int8 amount);
 };

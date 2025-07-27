@@ -10,6 +10,8 @@
 #include "Engine/SkeletalMeshSocket.h"
 //#include "DrawDebugHelpers.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Item.h"
+#include "Components/WidgetComponent.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -46,7 +48,9 @@ ASentinelRebel::ASentinelRebel()
 	  // Automatic fire variables
 	  _mAutomaticFirerate(0.1f),
 	  _mbShouldFire(true),
-	  _mbFireButtonPressed(false)
+	  _mbFireButtonPressed(false),
+	  // Item trace variables
+	  _mbShouldTraceForItems(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -194,19 +198,19 @@ void ASentinelRebel::FireWeapon()
 			{
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mImpactParticles, beamEnd);
 			}
+		}
 
-			if (_mBeamParticles)
+		if (_mBeamParticles)
+		{
+			UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mBeamParticles, socketTransform);
+
+			if (beam)
 			{
-				UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _mBeamParticles, socketTransform);
-
-				if (beam)
-				{
-					beam->SetVectorParameter(FName("Target"), beamEnd);
-				}
-				else
-				{
-					UE_LOG(LogTemp, Error, TEXT("Beam is invalid."));
-				}
+				beam->SetVectorParameter(FName("Target"), beamEnd);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Beam is invalid."));
 			}
 		}
 	}
@@ -240,59 +244,25 @@ void ASentinelRebel::FireWeapon()
 
 bool ASentinelRebel::GetBeamEndLocation(const FVector& muzzleSocketLocation, FVector& outBeamLocation)
 {
-	// Get current size of the viewport
-	FVector2D viewportSize;
-	if (GEngine && GEngine->GameViewport)
+	// Check for crosshair trace hit
+	FHitResult crosshairHitResult;
+
+	TraceUnderCrosshairs(crosshairHitResult);
+
+	// Tentative beam location - still need to trace from gun
+	outBeamLocation = crosshairHitResult.Location;
+
+	// Perform a second trace, this time from gun barrel
+	FHitResult weaponTraceHit;
+	const FVector weaponTraceStart{ muzzleSocketLocation };
+	const FVector startToEnd{ outBeamLocation - muzzleSocketLocation };
+	const FVector weaponTraceEnd{ muzzleSocketLocation + startToEnd * 1.25f };
+
+	GetWorld()->LineTraceSingleByChannel(weaponTraceHit, weaponTraceStart, weaponTraceEnd, ECollisionChannel::ECC_Visibility);
+
+	if (weaponTraceHit.bBlockingHit) // object between barrel and BeamEndPoint?
 	{
-		GEngine->GameViewport->GetViewportSize(viewportSize);
-	}
-
-	// Get screen space location of crosshairs
-	FVector2D crosshairLocation(viewportSize.X / 2.0f, viewportSize.Y / 2.0f);
-	crosshairLocation.Y -= _mCrosshairYOffset;
-
-	FVector crosshairWorldPosition;
-	FVector crosshairWorldDirection;
-
-	// Get world position and direction of crosshairs
-	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld
-	(
-		UGameplayStatics::GetPlayerController(this, 0),
-		crosshairLocation,
-		crosshairWorldPosition,
-		crosshairWorldDirection
-	);
-
-	if (bScreenToWorld) // was Deprojection successful?
-	{
-		FHitResult screenTraceHit;
-		const FVector start{ crosshairWorldPosition };
-		const FVector end{ crosshairWorldPosition + crosshairWorldDirection * 50'000.0f };
-
-		// Set beam end point to line trace end point
-		outBeamLocation = end;
-
-		// Trace outward from crosshairs world location
-		GetWorld()->LineTraceSingleByChannel(screenTraceHit, start, end, ECollisionChannel::ECC_Visibility);
-
-		if (screenTraceHit.bBlockingHit) // was there a trace hit?
-		{
-			// Beam end point is now trace hit location
-			outBeamLocation = screenTraceHit.Location;
-		}
-
-		// Perform a second trace, this time from gun barrel
-		FHitResult weaponTraceHit;
-		const FVector weaponTraceStart{ muzzleSocketLocation };
-		const FVector weaponTraceEnd{ outBeamLocation };
-
-		GetWorld()->LineTraceSingleByChannel(weaponTraceHit, weaponTraceStart, weaponTraceEnd, ECollisionChannel::ECC_Visibility);
-
-		if (weaponTraceHit.bBlockingHit) // object between barrel and BeamEndPoint?
-		{
-			outBeamLocation = weaponTraceHit.Location;
-		}
-
+		outBeamLocation = weaponTraceHit.Location;
 		return true;
 	}
 
@@ -431,6 +401,99 @@ void ASentinelRebel::AutoFireReset()
 	}
 }
 
+bool ASentinelRebel::TraceUnderCrosshairs(FHitResult& outHitResult)
+{
+	// Get Viewport Size
+	FVector2D viewportSize;
+	if (GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(viewportSize);
+	}
+
+	FVector2D crosshairLocation(viewportSize.X / 2.0f, viewportSize.Y / 2.0f);
+	crosshairLocation.Y -= _mCrosshairYOffset;
+	FVector crosshairWorldPosition;
+	FVector crosshairWorldDirection;
+
+	// Get world position and direction of crosshairs
+	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld
+	(
+		UGameplayStatics::GetPlayerController(this, 0),
+		crosshairLocation,
+		crosshairWorldPosition,
+		crosshairWorldDirection
+	);
+
+	bool traceSuccessful = false;
+
+	if (bScreenToWorld)
+	{
+		// Trace from Crosshair world location outward
+		const FVector start{ crosshairWorldPosition };
+		const FVector end{ start + crosshairWorldDirection * 50'000.0f };
+
+		GetWorld()->LineTraceSingleByChannel(outHitResult, start, end, ECollisionChannel::ECC_Visibility);
+
+		if (outHitResult.bBlockingHit)
+		{
+			/** Note: If something blocks the line trace then LineTraceSingleByChannel method
+			*   will fill the outHitResult.Location with the hit point location
+			*/
+			traceSuccessful = true;
+		}
+		else
+		{
+			// Hit unsuccessful so marking the hit location as the farthest point possible.
+			outHitResult.Location = end;
+			traceSuccessful = false;
+		}
+	}
+
+	return traceSuccessful;
+}
+
+void ASentinelRebel::TraceForItems()
+{
+	if (_mbShouldTraceForItems)
+	{
+		FHitResult itemTraceResult;
+		TraceUnderCrosshairs(itemTraceResult);
+
+		if (itemTraceResult.bBlockingHit)
+		{
+			AItem* hitItem = Cast<AItem>(itemTraceResult.GetActor());
+
+			if (hitItem && hitItem->GetPickupWidget() && hitItem->IsOverlappingActor(this))
+			{
+				// Show Item's Pickup Widget
+				hitItem->GetPickupWidget()->SetVisibility(true);
+			}
+
+			// We hit an AItem last frame
+			if (_mTraceHitItemLastFrame)
+			{
+				if (hitItem != _mTraceHitItemLastFrame)
+				{
+					/** We are hitting a different AItem this frame from last frame
+					*   Or AItem is null
+					*/
+					_mTraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+				}
+			}
+
+			// Store a reference to HitItem for next frame
+			_mTraceHitItemLastFrame = hitItem;
+		}
+	}
+	else if (_mTraceHitItemLastFrame)
+	{
+		/** No longer overlapping any items,
+		*   Item last frame should not show widget
+		*/
+		_mTraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+	}
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
@@ -444,6 +507,9 @@ void ASentinelRebel::Tick(float DeltaTime)
 
 	// Calculate crosshair spread multiplier
 	CalculateCrosshairSpread(DeltaTime);
+
+	// Check OverlappedItemCount, then trace for items
+	TraceForItems();
 }
 
 // Called to bind functionality to input
@@ -477,4 +543,18 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 float ASentinelRebel::GetCrosshairSpreadMultiplier() const
 {
 	return _mCrosshairSpreadMultiplier;
+}
+
+void ASentinelRebel::IncrementOverlappedItemCount(int8 amount)
+{
+	if (_mOverlappedItemCount + amount <= 0)
+	{
+		_mOverlappedItemCount = 0;
+		_mbShouldTraceForItems = false;
+	}
+	else
+	{
+		_mOverlappedItemCount += amount;
+		_mbShouldTraceForItems = true;
+	}
 }

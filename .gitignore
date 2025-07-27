@@ -87,3 +87,4 @@ enc_temp_folder/*
 
 # Ignore Asset folders
 Content/ParagonLtBelica/*
+Content/Assets/*
