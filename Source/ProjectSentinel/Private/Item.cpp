@@ -10,7 +10,8 @@
 // Sets default values
 AItem::AItem()
 	: _mItemName(FString("Default")),
-	  _mItemCount(0)
+	  _mItemCount(0),
+	  _mItemRarity(EItemRarity::EIR_Common)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -36,7 +37,13 @@ void AItem::BeginPlay()
 	Super::BeginPlay();
 	
 	// Hide Pickup Widget
-	_mPickupWidget->SetVisibility(false);
+	if (_mPickupWidget)
+	{
+		_mPickupWidget->SetVisibility(false);
+	}
+
+	// Sets ActiveStars array based on Item Rarity
+	SetActiveStars();
 
 	// Setup overlap for AreaSphere
 	_mAreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AItem::OnSphereOverlap);
@@ -66,6 +73,48 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* overlappedComponent, AActor*
 		{
 			sentinelRebel->IncrementOverlappedItemCount(-1);
 		}
+	}
+}
+
+void AItem::SetActiveStars()
+{
+	for (uint8 i = 0; i < 5; ++i)
+	{
+		_mActiveStars.Add(false);
+	}
+
+	uint8 rarityIncrementer = 0;
+
+	switch (_mItemRarity)
+	{
+	case EItemRarity::EIR_Damaged:
+		_mActiveStars[rarityIncrementer++] = true;
+		break;
+	case EItemRarity::EIR_Common:
+		_mActiveStars[rarityIncrementer++] = true;
+		_mActiveStars[rarityIncrementer++] = true;
+		break;
+	case EItemRarity::EIR_Uncommon:
+		_mActiveStars[rarityIncrementer++] = true;
+		_mActiveStars[rarityIncrementer++] = true;
+		_mActiveStars[rarityIncrementer++] = true;
+		break;
+	case EItemRarity::EIR_Rare:
+		_mActiveStars[rarityIncrementer++] = true;
+		_mActiveStars[rarityIncrementer++] = true;
+		_mActiveStars[rarityIncrementer++] = true;
+		_mActiveStars[rarityIncrementer++] = true;
+		break;
+	case EItemRarity::EIR_Legendary:
+		_mActiveStars[rarityIncrementer++] = true;
+		_mActiveStars[rarityIncrementer++] = true;
+		_mActiveStars[rarityIncrementer++] = true;
+		_mActiveStars[rarityIncrementer++] = true;
+		_mActiveStars[rarityIncrementer++] = true;
+		break;
+	default:
+		UE_LOG(LogTemp, Error, TEXT("Default has been hit for rarity... something is not right"));
+		break;
 	}
 }
 
