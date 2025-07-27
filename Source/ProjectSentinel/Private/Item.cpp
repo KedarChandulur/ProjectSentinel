@@ -4,6 +4,8 @@
 #include "Item.h"
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Components/SphereComponent.h"
+#include "SentinelRebel.h"
 
 // Sets default values
 AItem::AItem()
@@ -21,6 +23,9 @@ AItem::AItem()
 
 	_mPickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	_mPickupWidget->SetupAttachment(GetRootComponent());
+
+	_mAreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("Area Sphere"));
+	_mAreaSphere->SetupAttachment(GetRootComponent());
 }
 
 // Called when the game starts or when spawned
@@ -30,6 +35,36 @@ void AItem::BeginPlay()
 	
 	// Hide Pickup Widget
 	_mPickupWidget->SetVisibility(false);
+
+	// Setup overlap for AreaSphere
+	_mAreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AItem::OnSphereOverlap);
+	_mAreaSphere->OnComponentEndOverlap.AddDynamic(this, &AItem::OnSphereEndOverlap);
+}
+
+void AItem::OnSphereOverlap(UPrimitiveComponent* overlappedComponent, AActor* otherActor, UPrimitiveComponent* otherComp, int32 otherBodyIndex, bool bFromSweep, const FHitResult& sweepResult)
+{
+	if (otherActor)
+	{
+		ASentinelRebel* sentinelRebel = Cast<ASentinelRebel>(otherActor);
+		
+		if (sentinelRebel)
+		{
+			sentinelRebel->IncrementOverlappedItemCount(1);
+		}
+	}
+}
+
+void AItem::OnSphereEndOverlap(UPrimitiveComponent* overlappedComponent, AActor* otherActor, UPrimitiveComponent* otherComp, int32 otherBodyIndex)
+{
+	if (otherActor)
+	{
+		ASentinelRebel* sentinelRebel = Cast<ASentinelRebel>(otherActor);
+
+		if (sentinelRebel)
+		{
+			sentinelRebel->IncrementOverlappedItemCount(-1);
+		}
+	}
 }
 
 // Called every frame

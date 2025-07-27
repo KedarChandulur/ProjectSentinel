@@ -48,7 +48,9 @@ ASentinelRebel::ASentinelRebel()
 	  // Automatic fire variables
 	  _mAutomaticFirerate(0.1f),
 	  _mbShouldFire(true),
-	  _mbFireButtonPressed(false)
+	  _mbFireButtonPressed(false),
+	  // Item trace variables
+	  _mbShouldTraceForItems(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -450,6 +452,26 @@ bool ASentinelRebel::TraceUnderCrosshairs(FHitResult& outHitResult)
 	return traceSuccessful;
 }
 
+void ASentinelRebel::TraceForItems()
+{
+	if (_mbShouldTraceForItems)
+	{
+		FHitResult itemTraceResult;
+		TraceUnderCrosshairs(itemTraceResult);
+
+		if (itemTraceResult.bBlockingHit)
+		{
+			AItem* hitItem = Cast<AItem>(itemTraceResult.GetActor());
+
+			if (hitItem && hitItem->GetPickupWidget() && hitItem->IsOverlappingActor(this))
+			{
+				// Show Item's Pickup Widget
+				hitItem->GetPickupWidget()->SetVisibility(true);
+			}
+		}
+	}
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
@@ -464,19 +486,8 @@ void ASentinelRebel::Tick(float DeltaTime)
 	// Calculate crosshair spread multiplier
 	CalculateCrosshairSpread(DeltaTime);
 
-	FHitResult itemTraceResult;
-	TraceUnderCrosshairs(itemTraceResult);
-
-	if (itemTraceResult.bBlockingHit)
-	{
-		AItem* hitItem = Cast<AItem>(itemTraceResult.GetActor());
-
-		if (hitItem && hitItem->GetPickupWidget())
-		{
-			// Show Item's Pickup Widget
-			hitItem->GetPickupWidget()->SetVisibility(true);
-		}
-	}
+	// Check OverlappedItemCount, then trace for items
+	TraceForItems();
 }
 
 // Called to bind functionality to input
@@ -510,4 +521,18 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 float ASentinelRebel::GetCrosshairSpreadMultiplier() const
 {
 	return _mCrosshairSpreadMultiplier;
+}
+
+void ASentinelRebel::IncrementOverlappedItemCount(int8 amount)
+{
+	if (_mOverlappedItemCount + amount <= 0)
+	{
+		_mOverlappedItemCount = 0;
+		_mbShouldTraceForItems = false;
+	}
+	else
+	{
+		_mOverlappedItemCount += amount;
+		_mbShouldTraceForItems = true;
+	}
 }
