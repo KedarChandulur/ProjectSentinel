@@ -12,6 +12,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Item.h"
 #include "Components/WidgetComponent.h"
+#include "Weapon.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -88,6 +89,9 @@ void ASentinelRebel::BeginPlay()
 		_mCameraDefaultFOV = GetFollowCamera()->FieldOfView;
 		_mCameraCurrentFOV = _mCameraDefaultFOV;
 	}
+	
+	// Spawn the default weapon and attach it to the mesh.
+	SpawnDefaultWeapon();
 }
 
 void ASentinelRebel::MoveForward(float value)
@@ -491,6 +495,28 @@ void ASentinelRebel::TraceForItems()
 		*   Item last frame should not show widget
 		*/
 		_mTraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+	}
+}
+
+void ASentinelRebel::SpawnDefaultWeapon()
+{
+	// Check the TSubclassOf variable
+	if (_mDefaultWeaponClass)
+	{
+		// Spawn the Weapon
+		AWeapon* defaultWeapon = GetWorld()->SpawnActor<AWeapon>(_mDefaultWeaponClass);
+
+		// Get the Hand Socket
+		const USkeletalMeshSocket* handSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
+
+		if (handSocket)
+		{
+			// Attach the Weapon to the hand socket RightHandSocket
+			handSocket->AttachActor(defaultWeapon, GetMesh());
+		}
+		
+		// Set EquippedWeapon to the newly spawned Weapon
+		_mEquippedWeapon = defaultWeapon;
 	}
 }
 
