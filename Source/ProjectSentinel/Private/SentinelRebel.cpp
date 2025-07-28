@@ -8,11 +8,14 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Engine/SkeletalMeshSocket.h"
-//#include "DrawDebugHelpers.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Item.h"
 #include "Components/WidgetComponent.h"
 #include "Weapon.h"
+#include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
+
+//#include "DrawDebugHelpers.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -90,8 +93,8 @@ void ASentinelRebel::BeginPlay()
 		_mCameraCurrentFOV = _mCameraDefaultFOV;
 	}
 	
-	// Spawn the default weapon and attach it to the mesh.
-	SpawnDefaultWeapon();
+	// Spawn the default weapon and equip it
+	EquipWeapon(SpawnDefaultWeapon());
 }
 
 void ASentinelRebel::MoveForward(float value)
@@ -99,7 +102,6 @@ void ASentinelRebel::MoveForward(float value)
 	if ((Controller != nullptr) && value != 0.0f)
 	{
 		const FRotator controllerRotation{ Controller->GetControlRotation() };
-		//const FRotator yawRotation{ 0, controllerRotation.Yaw, 0 };
 		const FRotator yawRotation{ 0.0f, controllerRotation.Yaw, 0.0f };
 
 		const FVector directionX{ FRotationMatrix{yawRotation}.GetUnitAxis(EAxis::X) };
@@ -113,7 +115,6 @@ void ASentinelRebel::MoveRight(float value)
 	if ((Controller != nullptr) && value != 0.0f)
 	{
 		const FRotator controllerRotation{ Controller->GetControlRotation() };
-		//const FRotator yawRotation{ 0, controllerRotation.Yaw, 0 };
 		const FRotator yawRotation{ 0.0f, controllerRotation.Yaw, 0.0f };
 
 		const FVector directionY{ FRotationMatrix{yawRotation}.GetUnitAxis(EAxis::Y) };
@@ -498,13 +499,27 @@ void ASentinelRebel::TraceForItems()
 	}
 }
 
-void ASentinelRebel::SpawnDefaultWeapon()
+AWeapon* ASentinelRebel::SpawnDefaultWeapon()
 {
 	// Check the TSubclassOf variable
 	if (_mDefaultWeaponClass)
 	{
 		// Spawn the Weapon
-		AWeapon* defaultWeapon = GetWorld()->SpawnActor<AWeapon>(_mDefaultWeaponClass);
+		return GetWorld()->SpawnActor<AWeapon>(_mDefaultWeaponClass);
+	}
+
+	return nullptr;
+}
+
+void ASentinelRebel::EquipWeapon(AWeapon* weaponToEquip)
+{
+	if (weaponToEquip)
+	{
+		// Set AreaSphere to ignore all Collision Channels
+		weaponToEquip->GetAreaSphere()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+
+		// Set CollisionBox to ignore all Collision Channels
+		weaponToEquip->GetCollisionBox()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 
 		// Get the Hand Socket
 		const USkeletalMeshSocket* handSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
@@ -512,12 +527,12 @@ void ASentinelRebel::SpawnDefaultWeapon()
 		if (handSocket)
 		{
 			// Attach the Weapon to the hand socket RightHandSocket
-			handSocket->AttachActor(defaultWeapon, GetMesh());
+			handSocket->AttachActor(weaponToEquip, GetMesh());
 		}
-		
-		// Set EquippedWeapon to the newly spawned Weapon
-		_mEquippedWeapon = defaultWeapon;
 	}
+
+	// Set EquippedWeapon to the newly spawned Weapon
+	_mEquippedWeapon = weaponToEquip;
 }
 
 // Called every frame

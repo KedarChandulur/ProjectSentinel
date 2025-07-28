@@ -83,7 +83,11 @@ protected:
 	/** Trace for items if OverlappedItemCount > 0 */
 	void TraceForItems();
 
-	void SpawnDefaultWeapon();
+	/** Spawn a default weapon and equips it */
+	class AWeapon* SpawnDefaultWeapon();
+
+	/** Takes a Weapon and attached it to the mesh */
+	void EquipWeapon(AWeapon* weaponToEquip);
 
 public:	
 	// Called every frame
@@ -230,7 +234,7 @@ private:
 
 	/** Currently Equipped Weapon */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	class AWeapon* _mEquippedWeapon;
+	AWeapon* _mEquippedWeapon;
 
 	/** Set this in Blueprints for the default Weapon Class */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))

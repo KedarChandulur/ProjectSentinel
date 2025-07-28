@@ -84,4 +84,13 @@ public:
 		return _mPickupWidget;
 	}
 
+	FORCEINLINE USphereComponent* GetAreaSphere() const
+	{
+		return _mAreaSphere;
+	}
+
+	FORCEINLINE UBoxComponent* GetCollisionBox() const
+	{
+		return _mCollisionBox;
+	}
 };
