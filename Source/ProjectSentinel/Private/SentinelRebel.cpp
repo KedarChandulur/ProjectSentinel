@@ -533,6 +533,7 @@ void ASentinelRebel::EquipWeapon(AWeapon* weaponToEquip)
 
 	// Set EquippedWeapon to the newly spawned Weapon
 	_mEquippedWeapon = weaponToEquip;
+	_mEquippedWeapon->SetItemState(EItemState::EIS_Equipped);
 }
 
 // Called every frame

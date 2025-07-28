@@ -18,6 +18,18 @@ enum class EItemRarity : uint8
 	EIR_MAX UMETA(DisplayName = "DefaultMax")
 };
 
+UENUM(BlueprintType)
+enum class EItemState : uint8
+{
+	EIS_PickUp UMETA(DisplayName = "PickUp"),
+	EIS_EquipInterping UMETA(DisplayName = "EquipInterping"),
+	EIS_PickedUp UMETA(DisplayName = "PickedUp"),
+	EIS_Equipped UMETA(DisplayName = "Equipped"),
+	EIS_Falling UMETA(DisplayName = "Falling"),
+
+	EIS_MAX UMETA(DisplayName = "DefaultMax")
+};
+
 UCLASS()
 class PROJECTSENTINEL_API AItem : public AActor
 {
@@ -78,6 +90,10 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
 	TArray<bool> _mActiveStars;
 
+	/** State of the Item */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	EItemState _mItemState;
+
 public:
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const
 	{
@@ -92,5 +108,15 @@ public:
 	FORCEINLINE UBoxComponent* GetCollisionBox() const
 	{
 		return _mCollisionBox;
+	}
+
+	FORCEINLINE EItemState GetItemState() const
+	{
+		return _mItemState;
+	}
+
+	FORCEINLINE void SetItemState(EItemState state)
+	{
+		_mItemState = state;
 	}
 };

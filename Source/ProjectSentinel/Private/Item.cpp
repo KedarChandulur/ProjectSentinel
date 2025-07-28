@@ -11,7 +11,8 @@
 AItem::AItem()
 	: _mItemName(FString("Default")),
 	  _mItemCount(0),
-	  _mItemRarity(EItemRarity::EIR_Common)
+	  _mItemRarity(EItemRarity::EIR_Common),
+	  _mItemState(EItemState::EIS_Pickup)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
