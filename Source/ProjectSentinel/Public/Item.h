@@ -119,4 +119,9 @@ public:
 	}
 
 	void SetItemState(EItemState state);
+
+	FORCEINLINE USkeletalMeshComponent* GetItemMesh() const
+	{
+		return _mItemMesh;
+	}
 };

@@ -530,6 +530,25 @@ void ASentinelRebel::EquipWeapon(AWeapon* weaponToEquip)
 	_mEquippedWeapon->SetItemState(EItemState::EIS_Equipped);
 }
 
+void ASentinelRebel::DropWeapon()
+{
+	if (_mEquippedWeapon)
+	{
+		FDetachmentTransformRules detachmentTransformRules(EDetachmentRule::KeepWorld, true);
+		_mEquippedWeapon->GetItemMesh()->DetachFromComponent(detachmentTransformRules);
+	}
+}
+
+void ASentinelRebel::SelectButtonPressed()
+{
+	DropWeapon();
+}
+
+void ASentinelRebel::SelectButtonReleased()
+{
+
+}
+
 // Called every frame
 void ASentinelRebel::Tick(float DeltaTime)
 {
@@ -574,6 +593,9 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &ASentinelRebel::AimingButtonPressed);
 	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &ASentinelRebel::AimingButtonReleased);
+
+	PlayerInputComponent->BindAction("Select", IE_Pressed, this, &ASentinelRebel::SelectButtonPressed);
+	PlayerInputComponent->BindAction("Select", IE_Released, this, &ASentinelRebel::SelectButtonReleased);
 }
 
 float ASentinelRebel::GetCrosshairSpreadMultiplier() const

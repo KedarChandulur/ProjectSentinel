@@ -89,6 +89,13 @@ protected:
 	/** Takes a Weapon and attached it to the mesh */
 	void EquipWeapon(AWeapon* weaponToEquip);
 
+	/** Detach weapon and let it fall to the ground */
+	void DropWeapon();
+
+	void SelectButtonPressed();
+
+	void SelectButtonReleased();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
