@@ -129,6 +129,7 @@ void AItem::SetItemProperties(EItemState state)
 	case EItemState::EIS_PickUp:
 		// Set mesh properties
 		_mItemMesh->SetSimulatePhysics(false);
+		_mItemMesh->SetEnableGravity(false);
 		_mItemMesh->SetVisibility(true);
 		_mItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		_mItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -146,9 +147,27 @@ void AItem::SetItemProperties(EItemState state)
 	case EItemState::EIS_Equipped:
 		// Set mesh properties
 		_mItemMesh->SetSimulatePhysics(false);
+		_mItemMesh->SetEnableGravity(false);
 		_mItemMesh->SetVisibility(true);
 		_mItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		_mItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// Set area sphere properties
+		_mAreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mAreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// Set collision box properties
+		_mCollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
+
+	case EItemState::EIS_Falling:
+		// Set mesh properties
+		_mItemMesh->SetSimulatePhysics(true);
+		_mItemMesh->SetEnableGravity(true);
+		_mItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		_mItemMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
 
 		// Set area sphere properties
 		_mAreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
