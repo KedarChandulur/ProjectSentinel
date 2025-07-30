@@ -538,6 +538,7 @@ void ASentinelRebel::DropWeapon()
 		_mEquippedWeapon->GetItemMesh()->DetachFromComponent(detachmentTransformRules);
 
 		_mEquippedWeapon->SetItemState(EItemState::EIS_Falling);
+		_mEquippedWeapon->ThrowWeapon();
 	}
 }
 

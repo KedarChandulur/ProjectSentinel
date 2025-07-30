@@ -13,5 +13,23 @@ UCLASS()
 class PROJECTSENTINEL_API AWeapon : public AItem
 {
 	GENERATED_BODY()
-	
+
+public:
+	AWeapon();
+
+	virtual void Tick(float deltaTime) override;
+
+protected:
+	void StopFalling();
+
+private:
+	FTimerHandle _mThrowWeaponTimer;
+
+	float _mThrowWeaponTime;
+
+	bool _mbFalling;
+
+public:
+	/** Adds an impulse to the Weapon */
+	void ThrowWeapon();
 };
