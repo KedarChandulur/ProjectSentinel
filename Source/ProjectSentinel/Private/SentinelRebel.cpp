@@ -8,10 +8,14 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Engine/SkeletalMeshSocket.h"
-//#include "DrawDebugHelpers.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Item.h"
 #include "Components/WidgetComponent.h"
+#include "Weapon.h"
+#include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
+
+//#include "DrawDebugHelpers.h"
 
 // Sets default values
 ASentinelRebel::ASentinelRebel()
@@ -88,6 +92,9 @@ void ASentinelRebel::BeginPlay()
 		_mCameraDefaultFOV = GetFollowCamera()->FieldOfView;
 		_mCameraCurrentFOV = _mCameraDefaultFOV;
 	}
+	
+	// Spawn the default weapon and equip it
+	EquipWeapon(SpawnDefaultWeapon());
 }
 
 void ASentinelRebel::MoveForward(float value)
@@ -95,7 +102,6 @@ void ASentinelRebel::MoveForward(float value)
 	if ((Controller != nullptr) && value != 0.0f)
 	{
 		const FRotator controllerRotation{ Controller->GetControlRotation() };
-		//const FRotator yawRotation{ 0, controllerRotation.Yaw, 0 };
 		const FRotator yawRotation{ 0.0f, controllerRotation.Yaw, 0.0f };
 
 		const FVector directionX{ FRotationMatrix{yawRotation}.GetUnitAxis(EAxis::X) };
@@ -109,7 +115,6 @@ void ASentinelRebel::MoveRight(float value)
 	if ((Controller != nullptr) && value != 0.0f)
 	{
 		const FRotator controllerRotation{ Controller->GetControlRotation() };
-		//const FRotator yawRotation{ 0, controllerRotation.Yaw, 0 };
 		const FRotator yawRotation{ 0.0f, controllerRotation.Yaw, 0.0f };
 
 		const FVector directionY{ FRotationMatrix{yawRotation}.GetUnitAxis(EAxis::Y) };
@@ -461,18 +466,18 @@ void ASentinelRebel::TraceForItems()
 
 		if (itemTraceResult.bBlockingHit)
 		{
-			AItem* hitItem = Cast<AItem>(itemTraceResult.GetActor());
+			_mTraceHitItem = Cast<AItem>(itemTraceResult.GetActor());
 
-			if (hitItem && hitItem->GetPickupWidget() && hitItem->IsOverlappingActor(this))
+			if (_mTraceHitItem && _mTraceHitItem->GetPickupWidget() && _mTraceHitItem->IsOverlappingActor(this))
 			{
 				// Show Item's Pickup Widget
-				hitItem->GetPickupWidget()->SetVisibility(true);
+				_mTraceHitItem->GetPickupWidget()->SetVisibility(true);
 			}
 
 			// We hit an AItem last frame
 			if (_mTraceHitItemLastFrame)
 			{
-				if (hitItem != _mTraceHitItemLastFrame)
+				if (_mTraceHitItem != _mTraceHitItemLastFrame)
 				{
 					/** We are hitting a different AItem this frame from last frame
 					*   Or AItem is null
@@ -482,7 +487,7 @@ void ASentinelRebel::TraceForItems()
 			}
 
 			// Store a reference to HitItem for next frame
-			_mTraceHitItemLastFrame = hitItem;
+			_mTraceHitItemLastFrame = _mTraceHitItem;
 		}
 	}
 	else if (_mTraceHitItemLastFrame)
@@ -492,6 +497,71 @@ void ASentinelRebel::TraceForItems()
 		*/
 		_mTraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
 	}
+}
+
+AWeapon* ASentinelRebel::SpawnDefaultWeapon()
+{
+	// Check the TSubclassOf variable
+	if (_mDefaultWeaponClass)
+	{
+		// Spawn the Weapon
+		return GetWorld()->SpawnActor<AWeapon>(_mDefaultWeaponClass);
+	}
+
+	return nullptr;
+}
+
+void ASentinelRebel::EquipWeapon(AWeapon* weaponToEquip)
+{
+	if (weaponToEquip)
+	{
+		// Get the Hand Socket
+		const USkeletalMeshSocket* handSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
+
+		if (handSocket)
+		{
+			// Attach the Weapon to the hand socket RightHandSocket
+			handSocket->AttachActor(weaponToEquip, GetMesh());
+		}
+	}
+
+	// Set EquippedWeapon to the newly spawned Weapon
+	_mEquippedWeapon = weaponToEquip;
+	_mEquippedWeapon->SetItemState(EItemState::EIS_Equipped);
+}
+
+void ASentinelRebel::DropWeapon()
+{
+	if (_mEquippedWeapon)
+	{
+		FDetachmentTransformRules detachmentTransformRules(EDetachmentRule::KeepWorld, true);
+		_mEquippedWeapon->GetItemMesh()->DetachFromComponent(detachmentTransformRules);
+
+		_mEquippedWeapon->SetItemState(EItemState::EIS_Falling);
+		_mEquippedWeapon->ThrowWeapon();
+	}
+}
+
+void ASentinelRebel::SelectButtonPressed()
+{
+	if (_mTraceHitItem != nullptr)
+	{
+		AWeapon* traceHitWeapon = Cast<AWeapon>(_mTraceHitItem);
+		SwapWeapon(traceHitWeapon);
+	}
+}
+
+void ASentinelRebel::SelectButtonReleased()
+{
+
+}
+
+void ASentinelRebel::SwapWeapon(AWeapon* weaponToSwap)
+{
+	DropWeapon();
+	EquipWeapon(weaponToSwap);
+	_mTraceHitItem = nullptr;
+	_mTraceHitItemLastFrame = nullptr;
 }
 
 // Called every frame
@@ -538,6 +608,9 @@ void ASentinelRebel::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &ASentinelRebel::AimingButtonPressed);
 	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &ASentinelRebel::AimingButtonReleased);
+
+	PlayerInputComponent->BindAction("Select", IE_Pressed, this, &ASentinelRebel::SelectButtonPressed);
+	PlayerInputComponent->BindAction("Select", IE_Released, this, &ASentinelRebel::SelectButtonReleased);
 }
 
 float ASentinelRebel::GetCrosshairSpreadMultiplier() const

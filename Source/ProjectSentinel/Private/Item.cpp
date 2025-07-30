@@ -11,7 +11,8 @@
 AItem::AItem()
 	: _mItemName(FString("Default")),
 	  _mItemCount(0),
-	  _mItemRarity(EItemRarity::EIR_Common)
+	  _mItemRarity(EItemRarity::EIR_Common),
+	  _mItemState(EItemState::EIS_PickUp)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -48,6 +49,9 @@ void AItem::BeginPlay()
 	// Setup overlap for AreaSphere
 	_mAreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AItem::OnSphereOverlap);
 	_mAreaSphere->OnComponentEndOverlap.AddDynamic(this, &AItem::OnSphereEndOverlap);
+
+	// Set Item properties based on ItemState
+	SetItemProperties(_mItemState);
 }
 
 void AItem::OnSphereOverlap(UPrimitiveComponent* overlappedComponent, AActor* otherActor, UPrimitiveComponent* otherComp, int32 otherBodyIndex, bool bFromSweep, const FHitResult& sweepResult)
@@ -113,7 +117,70 @@ void AItem::SetActiveStars()
 		_mActiveStars[rarityIncrementer++] = true;
 		break;
 	default:
-		UE_LOG(LogTemp, Error, TEXT("Default has been hit for rarity... something is not right"));
+		UE_LOG(LogTemp, Error, TEXT("Default has been hit for rarity... did you setup your enum correctly?"));
+		break;
+	}
+}
+
+void AItem::SetItemProperties(EItemState state)
+{
+	switch (state)
+	{
+	case EItemState::EIS_PickUp:
+		// Set mesh properties
+		_mItemMesh->SetSimulatePhysics(false);
+		_mItemMesh->SetEnableGravity(false);
+		_mItemMesh->SetVisibility(true);
+		_mItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// Set area sphere properties
+		_mAreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+		_mAreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+		// Set collision box properties
+		_mCollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mCollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+		_mCollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		break;
+
+	case EItemState::EIS_Equipped:
+		_mPickupWidget->SetVisibility(false);
+		// Set mesh properties
+		_mItemMesh->SetSimulatePhysics(false);
+		_mItemMesh->SetEnableGravity(false);
+		_mItemMesh->SetVisibility(true);
+		_mItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// Set area sphere properties
+		_mAreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mAreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// Set collision box properties
+		_mCollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
+
+	case EItemState::EIS_Falling:
+		// Set mesh properties
+		_mItemMesh->SetSimulatePhysics(true);
+		_mItemMesh->SetEnableGravity(true);
+		_mItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		_mItemMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
+
+		// Set area sphere properties
+		_mAreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mAreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// Set collision box properties
+		_mCollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
+
+	default:
+		UE_LOG(LogTemp, Error, TEXT("Default has been hit for item properties... did you setup your enum correctly?"));
 		break;
 	}
 }
@@ -125,3 +192,9 @@ void AItem::Tick(float DeltaTime)
 
 }
 
+void AItem::SetItemState(EItemState state)
+{
+	_mItemState = state;
+
+	SetItemProperties(state);
+}

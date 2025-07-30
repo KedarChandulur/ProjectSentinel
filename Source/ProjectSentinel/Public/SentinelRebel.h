@@ -83,6 +83,22 @@ protected:
 	/** Trace for items if OverlappedItemCount > 0 */
 	void TraceForItems();
 
+	/** Spawn a default weapon and equips it */
+	class AWeapon* SpawnDefaultWeapon();
+
+	/** Takes a Weapon and attached it to the mesh */
+	void EquipWeapon(AWeapon* weaponToEquip);
+
+	/** Detach weapon and let it fall to the ground */
+	void DropWeapon();
+
+	void SelectButtonPressed();
+
+	void SelectButtonReleased();
+
+	/** Drops currently equipped Weapon and Equips TraceHitItem */
+	void SwapWeapon(AWeapon* weaponToSwap);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -225,6 +241,18 @@ private:
 	/** The AItem we hit last frame */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
 	class AItem* _mTraceHitItemLastFrame;
+
+	/** Currently Equipped Weapon */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	AWeapon* _mEquippedWeapon;
+
+	/** Set this in Blueprints for the default Weapon Class */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AWeapon> _mDefaultWeaponClass;
+
+	/** The item currently hit by our trace in TraceForItems (could be null) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	AItem* _mTraceHitItem;
 
 public:
 	/** Returns CameraBoom subobject */
