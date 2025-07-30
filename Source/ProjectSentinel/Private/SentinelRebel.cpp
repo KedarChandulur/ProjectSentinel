@@ -466,18 +466,18 @@ void ASentinelRebel::TraceForItems()
 
 		if (itemTraceResult.bBlockingHit)
 		{
-			AItem* hitItem = Cast<AItem>(itemTraceResult.GetActor());
+			_mTraceHitItem = Cast<AItem>(itemTraceResult.GetActor());
 
-			if (hitItem && hitItem->GetPickupWidget() && hitItem->IsOverlappingActor(this))
+			if (_mTraceHitItem && _mTraceHitItem->GetPickupWidget() && _mTraceHitItem->IsOverlappingActor(this))
 			{
 				// Show Item's Pickup Widget
-				hitItem->GetPickupWidget()->SetVisibility(true);
+				_mTraceHitItem->GetPickupWidget()->SetVisibility(true);
 			}
 
 			// We hit an AItem last frame
 			if (_mTraceHitItemLastFrame)
 			{
-				if (hitItem != _mTraceHitItemLastFrame)
+				if (_mTraceHitItem != _mTraceHitItemLastFrame)
 				{
 					/** We are hitting a different AItem this frame from last frame
 					*   Or AItem is null
@@ -487,7 +487,7 @@ void ASentinelRebel::TraceForItems()
 			}
 
 			// Store a reference to HitItem for next frame
-			_mTraceHitItemLastFrame = hitItem;
+			_mTraceHitItemLastFrame = _mTraceHitItem;
 		}
 	}
 	else if (_mTraceHitItemLastFrame)
@@ -544,12 +544,24 @@ void ASentinelRebel::DropWeapon()
 
 void ASentinelRebel::SelectButtonPressed()
 {
-	DropWeapon();
+	if (_mTraceHitItem != nullptr)
+	{
+		AWeapon* traceHitWeapon = Cast<AWeapon>(_mTraceHitItem);
+		SwapWeapon(traceHitWeapon);
+	}
 }
 
 void ASentinelRebel::SelectButtonReleased()
 {
 
+}
+
+void ASentinelRebel::SwapWeapon(AWeapon* weaponToSwap)
+{
+	DropWeapon();
+	EquipWeapon(weaponToSwap);
+	_mTraceHitItem = nullptr;
+	_mTraceHitItemLastFrame = nullptr;
 }
 
 // Called every frame
