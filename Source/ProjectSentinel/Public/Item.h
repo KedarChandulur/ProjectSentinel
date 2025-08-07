@@ -130,6 +130,10 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
 	class ASentinelRebel* _mRebel;
 
+	/** X and Y for the Item while interping in the EquipInterping state */
+	float _mItemInterpX;
+	float _mItemInterpY;
+
 public:
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const
 	{
