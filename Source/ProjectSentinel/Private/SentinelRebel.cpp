@@ -54,7 +54,10 @@ ASentinelRebel::ASentinelRebel()
 	  _mbShouldFire(true),
 	  _mbFireButtonPressed(false),
 	  // Item trace variables
-	  _mbShouldTraceForItems(false)
+	  _mbShouldTraceForItems(false),
+	  // Camera interp location variables
+	  _mCameraInterpDistance(250.0f),
+	  _mCameraInterpElevation(65.0f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -630,4 +633,13 @@ void ASentinelRebel::IncrementOverlappedItemCount(int8 amount)
 		_mOverlappedItemCount += amount;
 		_mbShouldTraceForItems = true;
 	}
+}
+
+FVector ASentinelRebel::GetCameraInterpLocation()
+{
+	const FVector cameraWorldLocation{ _mFollowCamera->GetComponentLocation() };
+	const FVector cameraForward{ _mFollowCamera->GetForwardVector() };
+
+	// Desired = cameraWorldLocation + cameraForward * A + Up * B;
+	return cameraWorldLocation + cameraForward * _mCameraInterpDistance + FVector(0.0f, 0.0f, _mCameraInterpElevation);
 }
