@@ -549,8 +549,7 @@ void ASentinelRebel::SelectButtonPressed()
 {
 	if (_mTraceHitItem != nullptr)
 	{
-		AWeapon* traceHitWeapon = Cast<AWeapon>(_mTraceHitItem);
-		SwapWeapon(traceHitWeapon);
+		_mTraceHitItem->StartItemCurve(this);
 	}
 }
 

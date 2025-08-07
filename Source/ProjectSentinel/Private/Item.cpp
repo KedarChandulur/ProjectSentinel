@@ -211,9 +211,45 @@ void AItem::SetItemProperties(EItemState state)
 
 void AItem::FinishInterping()
 {
+	_mbInterping = false;
+
 	if (_mRebel)
 	{
 		_mRebel->GetPickUpItem(this);
+	}
+}
+
+void AItem::ItemInterp(float deltaTime)
+{
+	if (!_mbInterping)
+	{
+		return;
+	}
+
+	if (_mRebel && _mItemZCurve)
+	{
+		// Elapsed time since we started ItemInterpTimer
+		const float elapsedTime = GetWorldTimerManager().GetTimerElapsed(_mItemInterpTimer);
+
+		// Get curve value corresponding to ElapsedTime
+		const float curveValue = _mItemZCurve->GetFloatValue(elapsedTime);
+
+		// Get the item's initial location when the curve started
+		FVector itemLocation = _mItemInterpStartLocation;
+
+		// Get location in front of the camera
+		const FVector cameraInterpLocation{ _mRebel->GetCameraInterpLocation() };
+
+		// Vector from Item to Camera Interp Location, X and Y are zeroed out
+		const FVector itemToCamera{ FVector(0.0f, 0.0f, (cameraInterpLocation - itemLocation).Z) };
+
+		// Scale factor to multiply with CurveValue
+		const float deltaZ = itemToCamera.Size();
+
+		// Adding curve value to the Z component of the Initial Location (scaled by the DeltaZ)
+		itemLocation.Z += curveValue * deltaZ;
+
+		SetActorLocation(itemLocation, true, nullptr, ETeleportType::TeleportPhysics);
 	}
 }
 
@@ -222,6 +258,8 @@ void AItem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Handle Item Interping when in the EquipInterping state
+	ItemInterp(DeltaTime);
 }
 
 void AItem::SetItemState(EItemState state)

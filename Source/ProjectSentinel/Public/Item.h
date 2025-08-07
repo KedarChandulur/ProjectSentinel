@@ -60,6 +60,9 @@ protected:
 	/** Called when ItemInterpTimer is finished */
 	void FinishInterping();
 
+	/** Handles Item interpolation when in the EquipInterping state */
+	void ItemInterp(float deltaTime);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
