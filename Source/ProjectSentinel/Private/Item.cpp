@@ -184,6 +184,25 @@ void AItem::SetItemProperties(EItemState state)
 		_mCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		break;
 
+	case EItemState::EIS_EquipInterping:
+		_mPickupWidget->SetVisibility(false);
+
+		// Set mesh properties
+		_mItemMesh->SetSimulatePhysics(false);
+		_mItemMesh->SetEnableGravity(false);
+		_mItemMesh->SetVisibility(true);
+		_mItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// Set area sphere properties
+		_mAreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mAreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// Set collision box properties
+		_mCollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		_mCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
+
 	default:
 		UE_LOG(LogTemp, Error, TEXT("Default has been hit for item properties... did you setup your enum correctly?"));
 		break;
