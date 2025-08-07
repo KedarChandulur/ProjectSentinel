@@ -6,6 +6,7 @@
 #include "Components/WidgetComponent.h"
 #include "Components/SphereComponent.h"
 #include "SentinelRebel.h"
+#include "Camera/CameraComponent.h"
 
 // Sets default values
 AItem::AItem()
@@ -14,12 +15,13 @@ AItem::AItem()
 	  _mItemRarity(EItemRarity::EIR_Common),
 	  _mItemState(EItemState::EIS_PickUp),
 	  // Item interp variables
-	  _mZCurveTime(0.7f),
 	  _mItemInterpStartLocation(FVector(0.0f)),
 	  _mCameraTargetLocation(FVector(0.0f)),
 	  _mbInterping(false),
+	  _mZCurveTime(0.7f),
 	  _mItemInterpX(0.0f),
-	  _mItemInterpY(0.0f)
+	  _mItemInterpY(0.0f),
+	  _mInterpInitialYawOffset(0.0f)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -264,6 +266,13 @@ void AItem::ItemInterp(float deltaTime)
 		itemLocation.Z += curveValue * deltaZ;
 
 		SetActorLocation(itemLocation, true, nullptr, ETeleportType::TeleportPhysics);
+
+		// Camera rotation this frame
+		const FRotator cameraRotation{ _mRebel->GetFollowCamera()->GetComponentRotation() };
+		// Camera rotation plus initial Yaw Offset
+		FRotator itemRotation{0.0f, cameraRotation.Yaw + _mInterpInitialYawOffset, 0.0f};
+
+		SetActorRotation(itemRotation, ETeleportType::TeleportPhysics);
 	}
 }
 
@@ -296,4 +305,13 @@ void AItem::StartItemCurve(ASentinelRebel* rebel)
 	SetItemState(EItemState::EIS_EquipInterping);
 
 	GetWorldTimerManager().SetTimer(_mItemInterpTimer, this, &AItem::FinishInterping, _mZCurveTime);
+
+	// Get initial Yaw of the Camera
+	const float cameraRotationYaw{ static_cast<float>(_mRebel->GetFollowCamera()->GetComponentRotation().Yaw) };
+
+	// Get initial Yaw of the Item
+	const float itemRotationYaw{ static_cast<float>(GetActorRotation().Yaw) };
+
+	// Initial Yaw offset between Camera and Item
+	_mInterpInitialYawOffset = itemRotationYaw - cameraRotationYaw;
 }
