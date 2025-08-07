@@ -292,4 +292,6 @@ public:
 	void IncrementOverlappedItemCount(int8 amount);
 
 	FVector GetCameraInterpLocation();
+
+	void GetPickUpItem(AItem* item);
 };

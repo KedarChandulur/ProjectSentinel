@@ -643,3 +643,13 @@ FVector ASentinelRebel::GetCameraInterpLocation()
 	// Desired = cameraWorldLocation + cameraForward * A + Up * B;
 	return cameraWorldLocation + cameraForward * _mCameraInterpDistance + FVector(0.0f, 0.0f, _mCameraInterpElevation);
 }
+
+void ASentinelRebel::GetPickUpItem(AItem* item)
+{
+	AWeapon* weapon = Cast<AWeapon>(item);
+
+	if (weapon)
+	{
+		SwapWeapon(weapon);
+	}
+}
