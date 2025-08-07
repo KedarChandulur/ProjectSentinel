@@ -57,6 +57,9 @@ protected:
 	/** Sets properties of the Item's components based on State */
 	void SetItemProperties(EItemState state);
 
+	/** Called when ItemInterpTimer is finished */
+	void FinishInterping();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -101,6 +104,29 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
 	class UCurveFloat* _mItemZCurve;
 
+	/** Starting location when interping begins */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	FVector _mItemInterpStartLocation;
+
+	/** Target interp location in front of the camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	FVector _mCameraTargetLocation;
+
+	/** true when interping */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	bool _mbInterping;
+
+	/** Plays when we start interping */
+	FTimerHandle _mItemInterpTimer;
+
+	/** Duration of the curve and timer */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	float _mZCurveTime;
+
+	/** Pointer to the character */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	class ASentinelRebel* _mRebel;
+
 public:
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const
 	{
@@ -128,4 +154,9 @@ public:
 	{
 		return _mItemMesh;
 	}
+
+	/** Called from the ASentinelRebel class */
+	void StartItemCurve(ASentinelRebel* rebel);
+
+
 };

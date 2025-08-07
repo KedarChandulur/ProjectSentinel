@@ -12,7 +12,12 @@ AItem::AItem()
 	: _mItemName(FString("Default")),
 	  _mItemCount(0),
 	  _mItemRarity(EItemRarity::EIR_Common),
-	  _mItemState(EItemState::EIS_PickUp)
+	  _mItemState(EItemState::EIS_PickUp),
+	  // Item interp variables
+	  _mZCurveTime(0.7f),
+	  _mItemInterpStartLocation(FVector(0.0f)),
+	  _mCameraTargetLocation(FVector(0.0f)),
+	  _mbInterping(false)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -185,6 +190,14 @@ void AItem::SetItemProperties(EItemState state)
 	}
 }
 
+void AItem::FinishInterping()
+{
+	if (_mRebel)
+	{
+		_mRebel->GetPickUpItem(this);
+	}
+}
+
 // Called every frame
 void AItem::Tick(float DeltaTime)
 {
@@ -197,4 +210,19 @@ void AItem::SetItemState(EItemState state)
 	_mItemState = state;
 
 	SetItemProperties(state);
+}
+
+void AItem::StartItemCurve(ASentinelRebel* rebel)
+{
+	// Store a handle to the Player Character
+	_mRebel = rebel;
+
+	// Store initial location of the Item
+	_mItemInterpStartLocation = GetActorLocation();
+
+	_mbInterping = true;
+
+	SetItemState(EItemState::EIS_EquipInterping);
+
+	GetWorldTimerManager().SetTimer(_mItemInterpTimer, this, &AItem::FinishInterping, _mZCurveTime);
 }
